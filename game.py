@@ -30,27 +30,27 @@ class Game:
         
         # Setup rooms
 
-        forest = Room("Forest", "dans une forêt enchantée. Vous entendez une brise légère à travers la cime des arbres.")
-        self.rooms.append(forest)
-        tower = Room("Tower", "dans une immense tour en pierre qui s'élève au dessus des nuages.")
-        self.rooms.append(tower)
-        cave = Room("Cave", "dans une grotte profonde et sombre. Des voix semblent provenir des profondeurs.")
-        self.rooms.append(cave)
-        cottage = Room("Cottage", "dans un petit chalet pittoresque avec un toit de chaume. Une épaisse fumée verte sort de la cheminée.")
-        self.rooms.append(cottage)
-        swamp = Room("Swamp", "dans un marécage sombre et ténébreux. L'eau bouillonne, les abords sont vaseux.")
-        self.rooms.append(swamp)
-        castle = Room("Castle", "dans un énorme château fort avec des douves et un pont levis. Sur les tours, des flèches en or massif.")
-        self.rooms.append(castle)
+        cuisine = Room("Cuisine", "dans la cuisine, on trouve un chaudron posé sur la cuisinière, des couteaux bien alignés (sauf un).")
+        self.rooms.append(cuisine)
+        salon_victorien = Room("Salon_Victorien", "dans le salon_victorien, il y a une grande cheminée éteinte, des fauteuils en cuir, une horloge ancienne qui fait un bruit inquiétant.")
+        self.rooms.append(salon_victorien)
+        bibliothèque = Room("Bibliothèque", "Il y a une odeur de vieux livres, une lumière tamisée, une échelle roulante.")
+        self.rooms.append(bibliothèque)
+        chambre_d’amis = Room("Chambre_d’amis", "Le lit de la chambre_d'amis est défait, la fenêtre entrouverte, un parfum étrange dans l’air.")
+        self.rooms.append(chambre_d’amis)
+        jardin_d’hiver = Room("Jardin d’hiver", "Dans le jardin_d’hiver, des plantes exotiques, une vitre brisée sur un côté.")
+        self.rooms.append(jardin_d’hiver)
+        bureau = Room("Bureau", "Dans le bureau les boiseries sont sombres, on trouve un coffre-fort, des papiers dispersés.")
+        self.rooms.append(bureau)
 
         # Create exits for rooms
 
-        forest.exits = {"N" : cave, "E" : tower, "S" : castle, "O" : None}
-        tower.exits = {"N" : cottage, "E" : None, "S" : swamp, "O" : forest}
-        cave.exits = {"N" : None, "E" : cottage, "S" : forest, "O" : None}
-        cottage.exits = {"N" : None, "E" : None, "S" : tower, "O" : cave}
-        swamp.exits = {"N" : tower, "E" : None, "S" : None, "O" : castle}
-        castle.exits = {"N" : forest, "E" : swamp, "S" : None, "O" : None}
+        cuisine.exits = {"N" : bibliothèque, "E" : salon_victorien, "S" : bureau, "O" : None}
+        salon_victorien.exits = {"N" : chambre_d’amis, "E" : None, "S" : jardin_d’hiver, "O" : cuisine}
+        bibliothèque.exits = {"N" : None, "E" : chambre_d’amis, "S" : cuisine, "O" : None}
+        chambre_d’amis.exits = {"N" : None, "E" : None, "S" : salon_victorien, "O" : bibliothèque}
+        jardin_d’hiver.exits = {"N" : salon_victorien, "E" : None, "S" : None, "O" : bureau}
+        bureau.exits = {"N" : cuisine, "E" : jardin_d’hiver, "S" : None, "O" : None}
 
         # Setup player and starting room
 
