@@ -36,26 +36,27 @@ class Game:
         self.rooms.append(salon_victorien)
         bibliothèque = Room("Bibliothèque", "Il y a une odeur de vieux livres, une lumière tamisée, une échelle roulante.")
         self.rooms.append(bibliothèque)
-        chambre_d’amis = Room("Chambre_d’amis", "Le lit de la chambre_d'amis est défait, la fenêtre entrouverte, un parfum étrange dans l’air.")
-        self.rooms.append(chambre_d’amis)
-        jardin_d’hiver = Room("Jardin d’hiver", "Dans le jardin_d’hiver, des plantes exotiques, une vitre brisée sur un côté.")
-        self.rooms.append(jardin_d’hiver)
+        chambre_amis = Room("Chambre_amis", "Le lit de la chambre_amis est défait, la fenêtre entrouverte, un parfum étrange dans l'air.")
+        self.rooms.append(chambre_amis)
+        jardin_hiver = Room("Jardin_hiver", "Dans le jardin_hiver, des plantes exotiques, une vitre brisée sur un côté.")
+        self.rooms.append(jardin_hiver)
         bureau = Room("Bureau", "Dans le bureau les boiseries sont sombres, on trouve un coffre-fort, des papiers dispersés.")
         self.rooms.append(bureau)
 
         # Create exits for rooms
 
         cuisine.exits = {"N" : bibliothèque, "E" : salon_victorien, "S" : bureau, "O" : None}
-        salon_victorien.exits = {"N" : chambre_d’amis, "E" : None, "S" : jardin_d’hiver, "O" : cuisine}
-        bibliothèque.exits = {"N" : None, "E" : chambre_d’amis, "S" : cuisine, "O" : None}
-        chambre_d’amis.exits = {"N" : None, "E" : None, "S" : salon_victorien, "O" : bibliothèque}
-        jardin_d’hiver.exits = {"N" : salon_victorien, "E" : None, "S" : None, "O" : bureau}
-        bureau.exits = {"N" : cuisine, "E" : jardin_d’hiver, "S" : None, "O" : None}
+        salon_victorien.exits = {"N" : chambre_amis, "E" : None, "S" : jardin_hiver, "O" : cuisine}
+        bibliothèque.exits = {"N" : None, "E" : chambre_amis, "S" : cuisine, "O" : None}
+        chambre_amis.exits = {"N" : None, "E" : None, "S" : salon_victorien, "O" : bibliothèque}
+        jardin_hiver.exits = {"N" : salon_victorien, "E" : None, "S" : None, "O" : bureau}
+        bureau.exits = {"N" : cuisine, "E" : jardin_hiver, "S" : None, "O" : None}
 
         # Setup player and starting room
 
         self.player = Player(input("\nEntrez votre nom: "))
-        self.player.current_room = swamp
+        # Start player in the cuisine by default (was 'swamp' which is undefined)
+        self.player.current_room = cuisine
 
     # Play the game
     def play(self):
