@@ -69,7 +69,8 @@ class Game:
         self.rooms.append(cuisine)
         bureau = Room(
             "Bureau",
-            "dans le bureau les boiseries sont sombres, on trouve un coffre-fort, "
+            "dans le bureau les boiseries sont sombres, un cadavre gis sur le sol.
+            "une grosse étagère est renversée sur lui, on trouve un coffre-fort ouvert, "
             "des papiers dispersés.",
         )
         self.rooms.append(bureau)
