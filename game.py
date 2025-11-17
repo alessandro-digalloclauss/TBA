@@ -25,32 +25,52 @@ class Game:
         self.commands["help"] = help
         quit = Command("quit", " : quitter le jeu", Actions.quit, 0)
         self.commands["quit"] = quit
-        go = Command("go", " <direction> : se déplacer dans une direction cardinale (N, E, S, O)", Actions.go, 1)
+        go = Command("go", " <direction> : se déplacer dans une direction cardinale (N, E, S, O, U, D)", Actions.go, 1)
         self.commands["go"] = go
         
         # Setup rooms
 
-        cuisine = Room("Cuisine", "dans la cuisine, on trouve un chaudron posé sur la cuisinière, des couteaux bien alignés (sauf un).")
-        self.rooms.append(cuisine)
-        salon_victorien = Room("Salon_Victorien", "dans le salon_victorien, il y a une grande cheminée éteinte, des fauteuils en cuir, une horloge ancienne qui fait un bruit inquiétant.")
-        self.rooms.append(salon_victorien)
-        bibliothèque = Room("Bibliothèque", "Il y a une odeur de vieux livres, une lumière tamisée, une échelle roulante.")
-        self.rooms.append(bibliothèque)
-        chambre_amis = Room("Chambre_amis", "Le lit de la chambre_amis est défait, la fenêtre entrouverte, un parfum étrange dans l'air.")
-        self.rooms.append(chambre_amis)
-        jardin_hiver = Room("Jardin_hiver", "Dans le jardin_hiver, des plantes exotiques, une vitre brisée sur un côté.")
+        jardin_hiver = Room("Jardin_hiver", "Dans le jardin d'hiver, des plantes exotiques, une vitre brisée sur un côté.")
         self.rooms.append(jardin_hiver)
+        hall = Room("Hall", "Un vaste hall éclairé par un grand lustre. Le marbre du sol renvoie une lueur froide.")
+        self.rooms.append(hall)
+        salon_victorien = Room("Salon_Victorien", "Dans le salon victorien, il y a une grande cheminée éteinte, des fauteuils en cuir, une horloge ancienne qui fait un bruit inquiétant.")
+        self.rooms.append(salon_victorien)
+        cuisine = Room("Cuisine", "Dans la cuisine, on trouve un chaudron posé sur la cuisinière, des couteaux bien alignés (sauf un).")
+        self.rooms.append(cuisine)
         bureau = Room("Bureau", "Dans le bureau les boiseries sont sombres, on trouve un coffre-fort, des papiers dispersés.")
         self.rooms.append(bureau)
 
+        couloir = Room("Couloir", "Un long couloir sombre aux lumières vacillantes. Le parquet grince à chaque pas.")
+        self.rooms.append(couloir)
+        chambre = Room("Chambre", "Le lit de la chambre est défait, la fenêtre entrouverte, un parfum étrange dans l'air.")
+        self.rooms.append(chambre)
+        bibliothèque = Room("Bibliothèque", "Il y a une odeur de vieux livres, une lumière tamisée, une échelle roulante.")
+        self.rooms.append(bibliothèque)
+        pièce_cachée = Room("Pièce_cachée", "Une pièce secrète dissimulée derrière un mur. Une lanterne vacille, un coffre verrouillé repose dans un coin.")
+        self.rooms.append(pièce_cachée)
+
+        cave_a_vin = Room("Cave_a_vin", "La cave à vin est fraîche et humide. Des rangées de bouteilles anciennes reposent dans des casiers en pierre. Une odeur de terre et de vieux bois remplit l'air.")
+        self.rooms.append(cave_a_vin)
+        atelier = Room("Atelier", "L'atelier est encombré d'outils, de pièces mécaniques et de plans étalés sur un établi. Une lampe vacillante éclaire difficilement la pièce.")
+        self.rooms.append(atelier)
+
         # Create exits for rooms
 
-        cuisine.exits = {"N" : bibliothèque, "E" : salon_victorien, "S" : bureau, "O" : None}
-        salon_victorien.exits = {"N" : chambre_amis, "E" : None, "S" : jardin_hiver, "O" : cuisine}
-        bibliothèque.exits = {"N" : None, "E" : chambre_amis, "S" : cuisine, "O" : None}
-        chambre_amis.exits = {"N" : None, "E" : None, "S" : salon_victorien, "O" : bibliothèque}
-        jardin_hiver.exits = {"N" : salon_victorien, "E" : None, "S" : None, "O" : bureau}
-        bureau.exits = {"N" : cuisine, "E" : jardin_hiver, "S" : None, "O" : None}
+        jardin_hiver.exits = {"N" : None, "E" : hall, "S" : None, "O" : None, "U" : None, "D" : None}
+        hall.exits = {"N" : None, "E" : salon_victorien, "S" : cuisine, "O" : jardin_hiver, "U" : couloir, "D" : None}
+        salon_victorien.exits = {"N" : None, "E" : None, "S" : bureau, "O" : hall, "U" : None, "D" : None}
+        cuisine.exits = {"N" : Hall, "E" : None, "S" : None, "O" : salon_victorien, "U" : None, "D" : cave_a_vin}
+        bureau.exits = {"N" : salon_victorien, "E" : None, "S" : None, "O" : cuisine, "U" : None, "D" : None}
+
+        cave_a_vin.exits = {"N" : None, "E" : atelier, "S" : None, "O" : None, "U" : cuisine, "D" : None}
+        atelier.exits = {"N" : None, "E" : None, "S" : None, "O" : atelier, "U" : None, "D" : None}
+
+        couloir.exits = {"N" : chambre, "E" : bibliothèque, "S" : None, "O" : None, "U" : None, "D" : cuisine}
+        chambre.exits = {"N" : None, "E" : None, "S" : couloir, "O" : None, "U" : None, "D" : None}
+        bibliothèque.exits = {"N" : None, "E" : pièce_cachée, "S" : None, "O" : couloir, "U" : None, "D" : None}
+        pièce_cachée.exits = {"N" : None, "E" : None, "S" : None, "O" : bibliothèque, "U" : None, "D" : None}
+
 
         # Setup player and starting room
 
