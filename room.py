@@ -125,3 +125,13 @@ class Room:
                 lines.append(f" - {name} : {obj}")
 
         return "\n".join(lines)
+
+    def look(self):
+        """Display the items present in this room.
+
+        This method prints a user-friendly list of items (delegates to
+        `get_inventory`) so Actions.look can call it directly.
+        Returns True after printing for consistency with action handlers.
+        """
+        print(self.get_inventory())
+        return True

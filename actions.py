@@ -81,3 +81,20 @@ class Actions:
         player = game.player
         print(player.get_history())
         return True
+
+    @staticmethod
+    def look(game, list_of_words, number_of_parameters):
+        """Show the items present in the current room (look command)."""
+        if len(list_of_words) != number_of_parameters + 1:
+            command_word = list_of_words[0]
+            print(MSG0.format(command_word=command_word))
+            return False
+
+        player = game.player
+        current = getattr(player, 'current_room', None)
+        if current is None:
+            print("\nVous n'êtes dans aucune pièce.\n")
+            return False
+
+        # Room.look prints the inventory and returns True/False
+        return current.look()

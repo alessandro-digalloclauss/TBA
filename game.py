@@ -44,6 +44,8 @@ class Game:
         self.commands["back"] = cmd_back
         cmd_history = Command("history", " : afficher l'historique", Actions.history, 0)
         self.commands["history"] = cmd_history
+        cmd_look = Command("look", " : regarder la pièce", Actions.look, 0)
+        self.commands["look"] = cmd_look
         
         # Setup rooms
 
@@ -142,6 +144,15 @@ class Game:
             "des plans froissés jonchent l'établi et une lampe vacillante jette une lueur tremblante."
         )
         self.rooms.append(atelier)
+
+        # Add a few example items into some rooms (name -> description or object)
+        # These are simple string descriptions; the Room.get_inventory will
+        # fall back to the stored value's str() when it's not a full Item.
+        jardin_hiver.inventory['plante étrange'] = "une plante aux feuilles veinées"
+        hall.inventory['cle'] = "une petite clé rouillée"
+        cuisine.inventory['couteau'] = "un couteau émoussé"
+        bibliotheque.inventory['grimoire'] = "un vieux grimoire relié de cuir"
+        cave_a_vin.inventory['bouteille'] = "une bouteille d'un millésime inconnu"
 
         # Create exits for rooms
 
