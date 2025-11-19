@@ -49,9 +49,35 @@ class Actions:
             command_word = list_of_words[0]
             print(MSG0.format(command_word=command_word))
             return False
-
         print("\nVoici les commandes disponibles:")
-        for command in game.commands.values():
+        # Print commands in a stable, sorted order by command word so
+        # newly added commands like 'back' and 'history' always appear.
+        for key in sorted(game.commands.keys()):
+            command = game.commands[key]
             print("\t- " + str(command))
         print()
+        return True
+
+    @staticmethod
+    def back(game, list_of_words, number_of_parameters):
+        """Move the player back to the previous room using the player's historique."""
+        if len(list_of_words) != number_of_parameters + 1:
+            command_word = list_of_words[0]
+            print(MSG0.format(command_word=command_word))
+            return False
+
+        player = game.player
+        # Player.retour handles printing and returns True/False
+        return player.retour()
+
+    @staticmethod
+    def history(game, list_of_words, number_of_parameters):
+        """Print the player's history (visited rooms)."""
+        if len(list_of_words) != number_of_parameters + 1:
+            command_word = list_of_words[0]
+            print(MSG0.format(command_word=command_word))
+            return False
+
+        player = game.player
+        print(player.get_history())
         return True
