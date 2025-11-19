@@ -35,7 +35,8 @@ class Game:
         self.commands["quit"] = cmd_quit
         go = Command(
             "go",
-            " <direction> : se déplacer dans une direction cardinale (N, E, S, O, U, D)",
+            " <direction> : se déplacer dans une direction cardinale "
+            "(N, E, S, O, U, D)",
             Actions.go,
             1,
         )
@@ -46,213 +47,228 @@ class Game:
         self.commands["history"] = cmd_history
         cmd_look = Command("look", " : regarder la pièce", Actions.look, 0)
         self.commands["look"] = cmd_look
-        
-        # Setup rooms
-
-        jardin_hiver = Room(
-            "Jardin_hiver",
-            "Dans le jardin d'hiver, des plantes exotiques, "
-            "une vitre brisée sur un côté.",
-            "dans le jardin d'hiver, des plantes exotiques poussent en désordre; "
-            "les feuilles, encore humides, brillent sous une vitre partiellement brisée, "
-            "et l'air est lourd d'une humidité ancienne."
+        cmd_check = Command("check", " : afficher l'inventaire", Actions.check, 0)
+        self.commands["check"] = cmd_check
+        cmd_take = Command(
+            "take",
+            " <item> : prendre un objet présent dans la pièce",
+            Actions.take,
+            1,
         )
-        self.rooms.append(jardin_hiver)
-        hall = Room(
-            "Hall",
-            "dans un vaste hall éclairé par un grand lustre. "
-            "Le marbre du sol renvoie une lueur froide.",
-            "dans un vaste hall, un grand lustre pend au plafond et projette des ombres mouvantes; "
-            "le marbre poli renvoie des reflets glacés et l'espace respire un calme solennel."
+        self.commands["take"] = cmd_take
+        cmd_drop = Command(
+            "drop",
+            " <item> : reposer un objet dans la pièce",
+            Actions.drop,
+            1,
         )
-        self.rooms.append(hall)
-        salon_victorien = Room(
-            "Salon_Victorien",
-            "dans le salon victorien, il y a une grande cheminée éteinte, "
-            "des fauteuils en cuir, une horloge ancienne qui fait un bruit inquiétant.",
-            "dans le salon victorien, la grande cheminée est froide; les fauteuils en cuir sont effrangés, "
-            "et une horloge ancienne égrène un tic-tac irrégulier qui résonne dans la pièce."
-        )
-        self.rooms.append(salon_victorien)
-        cuisine = Room(
-            "Cuisine",
-            "dans la cuisine, on trouve un chaudron posé sur la cuisinière, "
-            "des couteaux bien alignés (sauf un).",
-            "dans la cuisine, un grand chaudron fume faiblement sur la cuisinière; "
-            "les couteaux sont alignés sur le plan de travail, mais l'un d'eux manque, "
-            "comme si quelqu'un était parti précipitamment."
-        )
-        self.rooms.append(cuisine)
-        bureau = Room(
-            "Bureau",
-            "dans le bureau les boiseries sont sombres, un cadavre gis sur le sol."
-            "une grosse étagère est renversée sur lui, on trouve un coffre-fort ouvert, "
-            "des papiers dispersés.",
-            "dans le bureau, les boiseries sombres absorbent la lumière; un corps gît au pied d'une étagère renversée, "
-            "le coffre-fort est ouvert et des papiers éparpillés révèlent des indices anciens et troublants."
-        )
-        self.rooms.append(bureau)
-
-        couloir = Room(
-            "Couloir",
-            "dans un long couloir sombre aux lumières vacillantes. "
-            "Le parquet grince à chaque pas.",
-            "dans un long couloir, les appliques vacillent et projettent des halos tremblants; "
-            "le parquet grince et chaque pas semble réveiller des échos du passé."
-        )
-        self.rooms.append(couloir)
-        chambre = Room(
-            "Chambre",
-            "dans la chambre, le lit est défait, la fenêtre entrouverte, "
-            "un parfum étrange dans l'air.",
-            "dans la chambre, le lit est défait et les draps froissés; la fenêtre est entrouverte et un parfum indéfini flotte, "
-            "comme un souvenir qu'on ne parvient pas à nommer."
-        )
-        self.rooms.append(chambre)
-        bibliotheque = Room(
-            "Bibliotheque",
-            "dans la bibliothèque, il y a une odeur de vieux livres, "
-            "une lumière tamisée, une échelle roulante.",
-            "dans la bibliothèque, des étagères alourdies de volumes montent jusqu'au plafond; "
-            "l'odeur du papier ancien et l'ombre d'une échelle roulante forment un refuge poussiéreux."
-        )
-        self.rooms.append(bibliotheque)
-        piece_cachee = Room(
-            "Pièce_cachée",
-            "dans une pièce secrète dissimulée derrière un mur. "
-            "Une lanterne vacille, un coffre verrouillé repose dans un coin.",
-            "dans une pièce secrète, une seule lanterne vacille et projette des ombres dans lesquelles danseraient d'anciens secrets; "
-            "un coffre verrouillé repose dans un coin, promettant des réponses et des dangers."
-        )
-        self.rooms.append(piece_cachee)
-
-        cave_a_vin = Room(
-            "Cave_a_vin",
-            "dans la cave à vin est fraîche et humide. Des rangées de bouteilles "
-            "anciennes reposent dans des casiers en pierre. Une odeur de terre "
-            "et de vieux bois remplit l'air.",
-            "dans la cave à vin, l'air est frais et humide; des bouteilles anciennes dorment dans des casiers de pierre, "
-            "et une odeur de terre et de bois mouillé rappelle des années oubliées."
-        )
-        self.rooms.append(cave_a_vin)
-        atelier = Room(
-            "Atelier",
-            "dans l'atelier, il y a des outils, des pièces mécaniques et des "
-            "plans étalés sur un établi. Une lampe vacillante éclaire "
-            "difficilement la pièce.",
-            "dans l'atelier, des outils sont éparpillés et des pièces mécaniques attendent d'être assemblées; "
-            "des plans froissés jonchent l'établi et une lampe vacillante jette une lueur tremblante."
-        )
-        self.rooms.append(atelier)
-
-        # Add a few example items into some rooms (name -> description or object)
-        # These are simple string descriptions; the Room.get_inventory will
-        # fall back to the stored value's str() when it's not a full Item.
-        jardin_hiver.inventory['plante étrange'] = "une plante aux feuilles veinées"
-        hall.inventory['cle'] = "une petite clé rouillée"
-        cuisine.inventory['couteau'] = "un couteau émoussé"
-        bibliotheque.inventory['grimoire'] = "un vieux grimoire relié de cuir"
-        cave_a_vin.inventory['bouteille'] = "une bouteille d'un millésime inconnu"
-
-        # Create exits for rooms
-
-        jardin_hiver.exits = {
-            "N": None,
-            "E": hall,
-            "S": None,
-            "O": None,
-            "U": None,
-            "D": None,
-        }
-        hall.exits = {
-            "N": None,
-            "E": salon_victorien,
-            "S": cuisine,
-            "O": jardin_hiver,
-            "U": couloir,
-            "D": None,
-        }
-        salon_victorien.exits = {
-            "N": None,
-            "E": None,
-            "S": bureau,
-            "O": hall,
-            "U": None,
-            "D": None,
-        }
-        cuisine.exits = {
-            "N": hall,
-            "E": None,
-            "S": None,
-            "O": salon_victorien,
-            "U": None,
-            "D": cave_a_vin,
-        }
-        bureau.exits = {
-            "N": salon_victorien,
-            "E": None,
-            "S": None,
-            "O": cuisine,
-            "U": None,
-            "D": None,
-        }
-
-        cave_a_vin.exits = {
-            "N": None,
-            "E": atelier,
-            "S": None,
-            "O": None,
-            "U": cuisine,
-            "D": None,
-        }
-        atelier.exits = {
-            "N": None,
-            "E": None,
-            "S": None,
-            "O": atelier,
-            "U": None,
-            "D": None,
-        }
-
-        couloir.exits = {
-            "N": chambre,
-            "E": bibliotheque,
-            "S": None,
-            "O": None,
-            "U": None,
-            "D": cuisine,
-        }
-        chambre.exits = {
-            "N": None,
-            "E": None,
-            "S": couloir,
-            "O": None,
-            "U": None,
-            "D": None,
-        }
-        bibliotheque.exits = {
-            "N": None,
-            "E": piece_cachee,
-            "S": None,
-            "O": couloir,
-            "U": None,
-            "D": None,
-        }
-        piece_cachee.exits = {
-            "N": None,
-            "E": None,
-            "S": None,
-            "O": bibliotheque,
-            "U": None,
-            "D": None,
-        }
-
+        self.commands["drop"] = cmd_drop
+        # Create world (rooms, inventories, exits)
+        start_room = self._create_world()
 
         # Setup player and starting room
-
         self.player = Player(input("\nEntrez votre nom: "))
         # Start player in the hall by default
-        self.player.current_room = hall
+        self.player.current_room = start_room
+
+    def _create_world(self):
+        """Create rooms, populate inventories and wire exits.
+
+        Returns the starting room (hall).
+        """
+        # Create all rooms and keep them in a dict for easy referencing
+        rooms = {}
+        rooms['jardin_hiver'] = Room(
+            'Jardin_hiver',
+            "Dans le jardin d'hiver, des plantes exotiques,",
+            "dans le jardin d'hiver, des plantes exotiques poussent en "
+            "désordre; les feuilles, encore humides, brillent sous une "
+            "vitre partiellement brisée, et l'air est lourd d'une humidité "
+            "ancienne."
+        )
+        rooms['hall'] = Room(
+            'Hall',
+            'dans un vaste hall éclairé par un grand lustre.',
+            "dans un vaste hall, un grand lustre pend au plafond et "
+            "projette des ombres mouvantes; le marbre poli renvoie des "
+            "reflets glacés et l'espace respire un calme solennel."
+        )
+        rooms['salon_victorien'] = Room(
+            'Salon_Victorien',
+            'dans le salon victorien, il y a une grande cheminée éteinte,',
+            'dans le salon victorien, la grande cheminée est froide; '
+            'les fauteuils en cuir sont effrangés, et une horloge ancienne '
+            'égrène un tic-tac irrégulier qui résonne dans la pièce.'
+        )
+        rooms['cuisine'] = Room(
+            'Cuisine',
+            'dans la cuisine, on trouve un chaudron posé sur la cuisinière,',
+            'dans la cuisine, un grand chaudron fume faiblement sur la '
+            'cuisinière; les couteaux sont alignés sur le plan de travail, '
+            "mais l'un d'eux manque, comme si quelqu'un était parti "
+            'précipitamment.'
+        )
+        rooms['bureau'] = Room(
+            'Bureau',
+            "dans le bureau les boiseries sont sombres, un cadavre gis sur le sol.",
+            "dans le bureau, les boiseries sombres absorbent la lumière; "
+            "un corps gît au pied d'une étagère renversée, le coffre-fort "
+            "est ouvert et des papiers éparpillés révèlent des indices "
+            "anciens et troublants."
+        )
+        rooms['couloir'] = Room(
+            'Couloir',
+            'dans un long couloir sombre aux lumières vacillantes.',
+            'dans un long couloir, les appliques vacillent et projettent '
+            'des halos tremblants; le parquet grince et chaque pas semble '
+            'réveiller des échos du passé.'
+        )
+        rooms['chambre'] = Room(
+            'Chambre',
+            'dans la chambre, le lit est défait, la fenêtre entrouverte,',
+            "dans la chambre, le lit est défait et les draps froissés; la "
+            "fenêtre est entrouverte et un parfum indéfini flotte, comme "
+            "un souvenir qu'on ne parvient pas à nommer."
+        )
+        rooms['bibliotheque'] = Room(
+            'Bibliotheque',
+            'dans la bibliothèque, il y a une odeur de vieux livres,',
+            "dans la bibliothèque, des étagères alourdies de volumes "
+            "montent jusqu'au plafond; l'odeur du papier ancien et l'ombre "
+            "d'une échelle roulante forment un refuge poussiéreux."
+        )
+        rooms['piece_cachee'] = Room(
+            'Pièce_cachée',
+            'dans une pièce secrète dissimulée derrière un mur.',
+            "dans une pièce secrète, une seule lanterne vacille et projette "
+            "des ombres dans lesquelles danseraient d'anciens secrets; un "
+            "coffre verrouillé repose dans un coin, promettant des "
+            "réponses et des dangers."
+        )
+        rooms['cave_a_vin'] = Room(
+            'Cave_a_vin',
+            "dans la cave à vin est fraîche et humide. Des rangées de bouteilles",
+            "dans la cave à vin, l'air est frais et humide; des bouteilles "
+            "anciennes dorment dans des casiers de pierre, et une odeur de "
+            "terre et de bois mouillé rappelle des années oubliées."
+        )
+        rooms['atelier'] = Room(
+            'Atelier',
+            "dans l'atelier, il y a des outils, des pièces mécaniques et des",
+            "dans l'atelier, des outils sont éparpillés et des pièces "
+            "mécaniques attendent d'être assemblées; des plans froissés "
+            "jonchent l'établi et une lampe vacillante jette une lueur "
+            "tremblante."
+        )
+
+        # Collect rooms in the game's room list
+        self.rooms = list(rooms.values())
+
+        # Add a few example items into some rooms (name -> description)
+        rooms['jardin_hiver'].inventory['plante étrange'] = (
+            'une plante aux feuilles veinées'
+        )
+        rooms['hall'].inventory['cle'] = 'une petite clé rouillée'
+        rooms['cuisine'].inventory['couteau'] = 'un couteau émoussé'
+        rooms['bibliotheque'].inventory['grimoire'] = (
+            'un vieux grimoire relié de cuir'
+        )
+        rooms['cave_a_vin'].inventory['bouteille'] = (
+            "une bouteille d'un millésime inconnu"
+        )
+
+        # Create exits for rooms
+        rooms['jardin_hiver'].exits = {
+            'N': None,
+            'E': rooms['hall'],
+            'S': None,
+            'O': None,
+            'U': None,
+            'D': None,
+        }
+        rooms['hall'].exits = {
+            'N': None,
+            'E': rooms['salon_victorien'],
+            'S': rooms['cuisine'],
+            'O': rooms['jardin_hiver'],
+            'U': rooms['couloir'],
+            'D': None,
+        }
+        rooms['salon_victorien'].exits = {
+            'N': None,
+            'E': None,
+            'S': rooms['bureau'],
+            'O': rooms['hall'],
+            'U': None,
+            'D': None,
+        }
+        rooms['cuisine'].exits = {
+            'N': rooms['hall'],
+            'E': None,
+            'S': None,
+            'O': rooms['salon_victorien'],
+            'U': None,
+            'D': rooms['cave_a_vin'],
+        }
+        rooms['bureau'].exits = {
+            'N': rooms['salon_victorien'],
+            'E': None,
+            'S': None,
+            'O': rooms['cuisine'],
+            'U': None,
+            'D': None,
+        }
+        rooms['cave_a_vin'].exits = {
+            'N': None,
+            'E': rooms['atelier'],
+            'S': None,
+            'O': None,
+            'U': rooms['cuisine'],
+            'D': None,
+        }
+        rooms['atelier'].exits = {
+            'N': None,
+            'E': None,
+            'S': None,
+            'O': rooms['atelier'],
+            'U': None,
+            'D': None,
+        }
+        rooms['couloir'].exits = {
+            'N': rooms['chambre'],
+            'E': rooms['bibliotheque'],
+            'S': None,
+            'O': None,
+            'U': None,
+            'D': rooms['cuisine'],
+        }
+        rooms['chambre'].exits = {
+            'N': None,
+            'E': None,
+            'S': rooms['couloir'],
+            'O': None,
+            'U': None,
+            'D': None,
+        }
+        rooms['bibliotheque'].exits = {
+            'N': None,
+            'E': rooms['piece_cachee'],
+            'S': None,
+            'O': rooms['couloir'],
+            'U': None,
+            'D': None,
+        }
+        rooms['piece_cachee'].exits = {
+            'N': None,
+            'E': None,
+            'S': None,
+            'O': rooms['bibliotheque'],
+            'U': None,
+            'D': None,
+        }
+
+        # Return the starting room (hall)
+        return rooms['hall']
 
     # Play the game
     def play(self):

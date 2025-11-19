@@ -98,3 +98,88 @@ class Actions:
 
         # Room.look prints the inventory and returns True/False
         return current.look()
+
+    @staticmethod
+    def take(game, list_of_words, number_of_parameters):
+        """Take an item present in the current room and add it to the player's inventory.
+
+        Expected form: take <item name>
+        """
+        # Allow multi-word item names by accepting >= required tokens
+        if len(list_of_words) < number_of_parameters + 1:
+            command_word = list_of_words[0]
+            print(MSG1.format(command_word=command_word))
+            return False
+
+        player = game.player
+        current = getattr(player, 'current_room', None)
+        if current is None:
+            print("\nVous n'êtes dans aucune pièce.\n")
+            return False
+
+        # Join remaining words to support multi-word item names
+        item_name = " ".join(list_of_words[1:]).strip()
+        if not item_name:
+            command_word = list_of_words[0]
+            print(MSG1.format(command_word=command_word))
+            return False
+
+        # Check if the item exists in the room
+        if item_name not in current.inventory:
+            print(f"\nIl n'y a pas d'item nommé '{item_name}' ici.\n")
+            return False
+
+        # Remove from room and add to player's inventory
+        obj = current.inventory.pop(item_name)
+        player.inventory[item_name] = obj
+        print(f"\nVous avez pris '{item_name}' et l'avez mis dans votre inventaire.\n")
+        return True
+
+    @staticmethod
+    def check(game, list_of_words, number_of_parameters):
+        """Display the player's inventory (check command)."""
+        if len(list_of_words) != number_of_parameters + 1:
+            command_word = list_of_words[0]
+            print(MSG0.format(command_word=command_word))
+            return False
+
+        player = game.player
+        # Player.get_inventory returns a readable string
+        print(player.get_inventory())
+        return True
+
+    @staticmethod
+    def drop(game, list_of_words, number_of_parameters):
+        """Drop an item from the player's inventory into the current room.
+
+        Expected form: drop <item name>
+        """
+        # Allow multi-word item names by accepting >= required tokens
+        if len(list_of_words) < number_of_parameters + 1:
+            command_word = list_of_words[0]
+            print(MSG1.format(command_word=command_word))
+            return False
+
+        player = game.player
+        current = getattr(player, 'current_room', None)
+        if current is None:
+            print("\nVous n'êtes dans aucune pièce.\n")
+            return False
+
+        # Join remaining words to support multi-word item names
+        item_name = " ".join(list_of_words[1:]).strip()
+        if not item_name:
+            command_word = list_of_words[0]
+            print(MSG1.format(command_word=command_word))
+            return False
+
+        # Check if the player has the item
+        if item_name not in player.inventory:
+            print(f"\nVous n'avez pas d'item nommé '{item_name}' dans votre inventaire.\n")
+            return False
+
+        # Remove from player inventory and add to room inventory
+        obj = player.inventory.pop(item_name)
+        current.inventory[item_name] = obj
+        print(f"\nVous avez reposé '{item_name}' dans la pièce.\n")
+        return True
