@@ -15,6 +15,9 @@ class Player:
         # historique: stack (list) of previously visited Room objects
         # Use append() to add a room and pop() to go back.
         self.historique = []
+        # inventaire: dictionnaire d'objets ramassés (name -> Item instance or count)
+        # Initialisé vide.
+        self.inventory = {}
 
     def move(self, direction):
         """Attempt to move the player in `direction`.
@@ -69,6 +72,29 @@ class Player:
             name = getattr(room, 'name', 'inconnue')
             name = name.replace('_', ' ')
             lines.append(f" - {name}")
+
+        return "\n".join(lines)
+
+    def get_inventory(self) -> str:
+        """Return a readable string representing the player's inventory.
+
+        If the inventory is empty, returns a short message in French.
+        Otherwise returns a header line followed by one entry per item.
+        The inventory is a dict mapping item names to item objects (or other
+        values). If the stored value looks like an item (has a description
+        attribute) we use its string representation; otherwise we fall back
+        to the stored value's string form.
+        """
+        if not self.inventory:
+            return "Votre inventaire est vide."
+
+        lines = ["Vous disposez des items suivants :"]
+        for name, obj in self.inventory.items():
+            # If obj is an Item-like object, prefer its __str__ output.
+            if hasattr(obj, "description") and hasattr(obj, "weight"):
+                lines.append(f" - {obj}")
+            else:
+                lines.append(f" - {name} : {obj}")
 
         return "\n".join(lines)
 

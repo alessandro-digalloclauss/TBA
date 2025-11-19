@@ -27,6 +27,9 @@ class Room:
         self.exits = {}
         # visited flag to allow different first-visit description
         self.visited = False
+        # inventory: dictionnaire d'objets présents dans la pièce (name -> Item instance)
+        # Initialisé vide.
+        self.inventory = {}
 
     def get_exit(self, direction):
         """Return the room in the given direction or None if absent."""
@@ -82,9 +85,8 @@ class Room:
                 # prefer a contextual line when a keyword is present
                 # occasionally append it to the chosen ambience
                 if random.random() < 0.7:
-                    return f"{line}"
-                else:
-                    return f"{ambience} {line}"
+                    return line
+                return f"{ambience} {line}"
         return ambience
 
     def get_long_description(self):
@@ -102,3 +104,24 @@ class Room:
         self.visited = True
 
         return f"\n-- {header} --\n\n{entry}. {ambience}\n\n{exits}\n"
+
+    def get_inventory(self) -> str:
+        """Return a readable string representing the items present in this room.
+
+        If the room has no items, returns a short message in French.
+        Otherwise returns a header line followed by one entry per item. If
+        the stored value looks like an Item (has a description and weight)
+        we use its string representation; otherwise we fall back to the
+        stored value's string form.
+        """
+        if not self.inventory:
+            return "Il n'y a rien ici."
+
+        lines = ["La pièce contient :"]
+        for name, obj in self.inventory.items():
+            if hasattr(obj, "description") and hasattr(obj, "weight"):
+                lines.append(f" - {obj}")
+            else:
+                lines.append(f" - {name} : {obj}")
+
+        return "\n".join(lines)
