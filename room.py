@@ -49,10 +49,13 @@ class Room:
     def _clean_description_for_entry(self, raw):
         """Normalize a raw description to a natural entry sentence."""
         desc = raw.strip()
+        # Always present the entry with 'dans' for natural phrasing.
+        # If the raw text already started with 'dans ', remove it to avoid duplication.
         if desc.lower().startswith("dans "):
             core = desc[5:]
-            return f"Vous entrez dans {core}"
-        return f"Vous entrez {desc}"
+        else:
+            core = desc
+        return f"Vous entrez dans {core}"
 
     def _contextual_ambience(self, raw):
         # Choose an ambience phrase, and add contextual lines for known keywords.

@@ -22,6 +22,26 @@ class Game:
         self.rooms = []
         self.commands = {}
         self.player = None
+        # Initialize directions and aliases early so they exist
+        # even if _create_world() is used directly in tests.
+        self.directions = set(["N", "E", "S", "O", "U", "D"])  # nord, est, sud, ouest, up, down
+        self.direction_aliases = {
+            "N": "N",
+            "NORD": "N",
+            "E": "E",
+            "EST": "E",
+            "S": "S",
+            "SUD": "S",
+            "O": "O",
+            "0": "O",
+            "OUEST": "O",
+            "U": "U",
+            "HAUT": "U",
+            "UP": "U",
+            "D": "D",
+            "BAS": "D",
+            "DOWN": "D",
+        }
     
     # Setup the game
     def setup(self):
@@ -63,6 +83,28 @@ class Game:
             1,
         )
         self.commands["drop"] = cmd_drop
+        # Directions used in the game (canonical single-letter codes)
+        # and aliases mapping various user inputs to the canonical code.
+        self.directions = set(["N", "E", "S", "O", "U", "D"])  # nord, est, sud, ouest, up, down
+        # Map common words/variants (case-insensitive) to canonical direction letters.
+        self.direction_aliases = {
+            "N": "N",
+            "NORD": "N",
+            "E": "E",
+            "EST": "E",
+            "S": "S",
+            "SUD": "S",
+            "O": "O",
+            "0": "O",
+            "OUEST": "O",
+            "OUEST": "O",
+            "U": "U",
+            "HAUT": "U",
+            "UP": "U",
+            "D": "D",
+            "BAS": "D",
+            "DOWN": "D",
+        }
         # Create world (rooms, inventories, exits)
         start_room = self._create_world()
 
@@ -80,82 +122,82 @@ class Game:
         rooms = {}
         rooms['jardin_hiver'] = Room(
             'Jardin_hiver',
-            "Dans le jardin d'hiver, des plantes exotiques,",
-            "dans le jardin d'hiver, des plantes exotiques poussent en "
+            "le jardin d'hiver, des plantes exotiques,",
+            "le jardin d'hiver, des plantes exotiques poussent en "
             "désordre; les feuilles, encore humides, brillent sous une "
             "vitre partiellement brisée, et l'air est lourd d'une humidité "
             "ancienne."
         )
         rooms['hall'] = Room(
             'Hall',
-            'dans un vaste hall éclairé par un grand lustre.',
-            "dans un vaste hall, un grand lustre pend au plafond et "
+            'un vaste hall éclairé par un grand lustre.',
+            "un vaste hall, un grand lustre pend au plafond et "
             "projette des ombres mouvantes; le marbre poli renvoie des "
             "reflets glacés et l'espace respire un calme solennel."
         )
         rooms['salon_victorien'] = Room(
             'Salon_Victorien',
-            'dans le salon victorien, il y a une grande cheminée éteinte,',
-            'dans le salon victorien, la grande cheminée est froide; '
+            'le salon victorien, il y a une grande cheminée éteinte,',
+            'le salon victorien, la grande cheminée est froide; '
             'les fauteuils en cuir sont effrangés, et une horloge ancienne '
             'égrène un tic-tac irrégulier qui résonne dans la pièce.'
         )
         rooms['cuisine'] = Room(
             'Cuisine',
-            'dans la cuisine, on trouve un chaudron posé sur la cuisinière,',
-            'dans la cuisine, un grand chaudron fume faiblement sur la '
+            'la cuisine, on trouve un chaudron posé sur la cuisinière,',
+            'la cuisine, un grand chaudron fume faiblement sur la '
             'cuisinière; les couteaux sont alignés sur le plan de travail, '
             "mais l'un d'eux manque, comme si quelqu'un était parti "
             'précipitamment.'
         )
         rooms['bureau'] = Room(
             'Bureau',
-            "dans le bureau les boiseries sont sombres, un cadavre gis sur le sol.",
-            "dans le bureau, les boiseries sombres absorbent la lumière; "
+            "le bureau les boiseries sont sombres, un cadavre gis sur le sol.",
+            "le bureau, les boiseries sombres absorbent la lumière; "
             "un corps gît au pied d'une étagère renversée, le coffre-fort "
             "est ouvert et des papiers éparpillés révèlent des indices "
             "anciens et troublants."
         )
         rooms['couloir'] = Room(
             'Couloir',
-            'dans un long couloir sombre aux lumières vacillantes.',
-            'dans un long couloir, les appliques vacillent et projettent '
+            'un long couloir sombre aux lumières vacillantes.',
+            'un long couloir, les appliques vacillent et projettent '
             'des halos tremblants; le parquet grince et chaque pas semble '
-            'réveiller des échos du passé.'
+            "réveiller des échos du passé."
         )
         rooms['chambre'] = Room(
             'Chambre',
-            'dans la chambre, le lit est défait, la fenêtre entrouverte,',
-            "dans la chambre, le lit est défait et les draps froissés; la "
+            'la chambre, le lit est défait, la fenêtre entrouverte,',
+            "la chambre, le lit est défait et les draps froissés; la "
             "fenêtre est entrouverte et un parfum indéfini flotte, comme "
             "un souvenir qu'on ne parvient pas à nommer."
         )
         rooms['bibliotheque'] = Room(
             'Bibliotheque',
-            'dans la bibliothèque, il y a une odeur de vieux livres,',
-            "dans la bibliothèque, des étagères alourdies de volumes "
+            'la bibliothèque, il y a une odeur de vieux livres,',
+            "la bibliothèque, des étagères alourdies de volumes "
             "montent jusqu'au plafond; l'odeur du papier ancien et l'ombre "
             "d'une échelle roulante forment un refuge poussiéreux."
         )
         rooms['piece_cachee'] = Room(
             'Pièce_cachée',
-            'dans une pièce secrète dissimulée derrière un mur.',
-            "dans une pièce secrète, une seule lanterne vacille et projette "
+            'une pièce secrète dissimulée derrière un mur.',
+            "une pièce secrète, une seule lanterne vacille et projette "
             "des ombres dans lesquelles danseraient d'anciens secrets; un "
             "coffre verrouillé repose dans un coin, promettant des "
             "réponses et des dangers."
         )
         rooms['cave_a_vin'] = Room(
             'Cave_a_vin',
-            "dans la cave à vin est fraîche et humide. Des rangées de bouteilles",
-            "dans la cave à vin, l'air est frais et humide; des bouteilles "
+            "la cave à vin est fraîche et humide. Des rangées de bouteilles",
+            "la cave à vin, l'air est frais et humide; des bouteilles "
             "anciennes dorment dans des casiers de pierre, et une odeur de "
             "terre et de bois mouillé rappelle des années oubliées."
         )
         rooms['atelier'] = Room(
             'Atelier',
-            "dans l'atelier, il y a des outils, des pièces mécaniques et des",
-            "dans l'atelier, des outils sont éparpillés et des pièces "
+            "l'atelier, il y a des outils, des pièces mécaniques et des",
+            "l'atelier, des outils sont éparpillés et des pièces "
             "mécaniques attendent d'être assemblées; des plans froissés "
             "jonchent l'établi et une lampe vacillante jette une lueur "
             "tremblante."
@@ -298,6 +340,11 @@ class Game:
                 f"\nCommande '{command_word}' non reconnue. Entrez 'help' "
                 "pour voir la liste des commandes disponibles.\n"
             )
+            # Also remind the player of their current location
+            current = getattr(self.player, 'current_room', None)
+            if current is not None:
+                room_name = getattr(current, 'name', 'inconnue').replace('_', ' ')
+                print(f"Vous êtes toujours dans {room_name}.\n")
         # If the command is recognized, execute it
         else:
             command = self.commands[command_word]

@@ -24,8 +24,38 @@ class Actions:
             return False
 
         player = game.player
-        direction = list_of_words[1]
-        player.move(direction)
+        raw = list_of_words[1].strip()
+        if not raw:
+            print("\nDirection vide. Utilisez une direction (N, E, S, O, U, D).\n")
+            return False
+
+        # Normalize the input and map aliases to canonical single-letter codes
+        key = raw.upper()
+        canonical = None
+        # If the game provides a mapping of aliases, use it
+        if hasattr(game, 'direction_aliases'):
+            canonical = game.direction_aliases.get(key)
+
+        # If not found, accept the first letter if it matches known directions
+        if canonical is None:
+            if len(key) >= 1:
+                candidate = key[0]
+                if hasattr(game, 'directions') and candidate in game.directions:
+                    canonical = candidate
+
+        if canonical is None:
+            print(f"\nDirection inconnue: '{raw}'. Utilisez N, E, S, O, U ou D.\n")
+            # Instead of printing the full 'Vous entrez ...' long description
+            # (which would be confusing here), show a short reminder of the
+            # current location: 'Vous êtes dans <nom de la pièce>'.
+            current = getattr(player, 'current_room', None)
+            if current is not None:
+                room_name = getattr(current, 'name', 'inconnue').replace('_', ' ')
+                print(f"Vous êtes toujours dans {room_name}.\n")
+            return False
+
+        # Finally attempt the movement with the canonical direction
+        player.move(canonical)
         return True
 
     @staticmethod
