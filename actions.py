@@ -163,10 +163,68 @@ class Actions:
             print(f"\nIl n'y a pas d'item nommé '{item_name}' ici.\n")
             return False
 
-        # Remove from room and add to player's inventory
+        # Inspecter l'objet sans l'enlever tout de suite pour vérifier la capacité
+        obj = current.inventory.get(item_name)
+
+        # Déterminer le poids de l'objet (0 si absent/non numérique)
+        item_weight = 0.0
+        if hasattr(obj, 'weight'):
+            try:
+                item_weight = float(obj.weight)
+            except Exception:
+                item_weight = 0.0
+
+        # Calculer le poids actuel porté par le joueur
+        current_weight = 0.0
+        if hasattr(player, 'current_carry_weight'):
+            try:
+                current_weight = float(player.current_carry_weight())
+            except Exception:
+                current_weight = 0.0
+        else:
+            # Recalculer si la méthode n'existe pas
+            for o in player.inventory.values():
+                if hasattr(o, 'weight'):
+                    try:
+                        current_weight += float(o.weight)
+                    except Exception:
+                        pass
+
+        # Vérifier la capacité maximale si définie
+        max_w = getattr(player, 'max_weight', None)
+        if max_w is not None:
+            try:
+                max_w_val = float(max_w)
+            except Exception:
+                max_w_val = None
+        else:
+            max_w_val = None
+
+        if max_w_val is not None and (current_weight + item_weight) > max_w_val:
+            # Ne pas prendre l'objet et afficher un message d'erreur
+            cw_disp = int(current_weight) if float(current_weight).is_integer() else round(current_weight, 2)
+            iw_disp = int(item_weight) if float(item_weight).is_integer() else round(item_weight, 2)
+            mw_disp = int(max_w_val) if float(max_w_val).is_integer() else round(max_w_val, 2)
+            print(
+                f"\nVous ne pouvez pas prendre '{item_name}' : {iw_disp} kg, "
+                f"capacité dépassée ({cw_disp} + {iw_disp} > {mw_disp} kg).\n"
+            )
+            return False
+
+        # Si tout est OK, enlever de la pièce et ajouter à l'inventaire du joueur
         obj = current.inventory.pop(item_name)
         player.inventory[item_name] = obj
-        print(f"\nVous avez pris '{item_name}' et l'avez mis dans votre inventaire.\n")
+        # Afficher le poids si disponible
+        if hasattr(obj, 'weight'):
+            try:
+                w = float(obj.weight)
+                w_display = f" ({w} kg)"
+            except Exception:
+                w_display = ""
+        else:
+            w_display = ""
+
+        print(f"\nVous avez pris '{item_name}'{w_display} et l'avez mis dans votre inventaire.\n")
         return True
 
     @staticmethod
@@ -215,5 +273,15 @@ class Actions:
         # Retirer de l'inventaire du joueur et ajouter à l'inventaire de la pièce
         obj = player.inventory.pop(item_name)
         current.inventory[item_name] = obj
-        print(f"\nVous avez reposé '{item_name}' dans la pièce.\n")
+        # Afficher le poids si disponible
+        if hasattr(obj, 'weight'):
+            try:
+                w = float(obj.weight)
+                w_display = f" ({w} kg)"
+            except Exception:
+                w_display = ""
+        else:
+            w_display = ""
+
+        print(f"\nVous avez reposé '{item_name}'{w_display} dans la pièce.\n")
         return True

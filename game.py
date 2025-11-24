@@ -12,6 +12,7 @@ from room import Room
 from player import Player
 from command import Command
 from actions import Actions
+from item import Item
 
 
 class Game:
@@ -207,17 +208,17 @@ class Game:
         # Collecter les pièces dans la liste du jeu
         self.rooms = list(rooms.values())
 
-        # Ajouter quelques items d'exemple dans certaines pièces (nom -> description)
-        rooms['jardin_hiver'].inventory['plante étrange'] = (
-            'une plante aux feuilles veinées'
+        # Ajouter quelques items d'exemple dans certaines pièces (nom -> Item)
+        rooms['jardin_hiver'].inventory['plante étrange'] = Item(
+            'plante étrange', 'une plante aux feuilles veinées', 0.8
         )
-        rooms['hall'].inventory['cle'] = 'une petite clé rouillée'
-        rooms['cuisine'].inventory['couteau'] = 'un couteau émoussé'
-        rooms['bibliotheque'].inventory['grimoire'] = (
-            'un vieux grimoire relié de cuir'
+        rooms['hall'].inventory['cle'] = Item('cle', 'une petite clé rouillée', 11)
+        rooms['cuisine'].inventory['couteau'] = Item('couteau', 'un couteau émoussé', 0.5)
+        rooms['bibliotheque'].inventory['grimoire'] = Item(
+            'grimoire', 'un vieux grimoire relié de cuir', 1.2
         )
-        rooms['cave_a_vin'].inventory['bouteille'] = (
-            "une bouteille d'un millésime inconnu"
+        rooms['cave_a_vin'].inventory['bouteille'] = Item(
+            'bouteille', "une bouteille d'un millésime inconnu", 1.5
         )
 
         # Create exits for rooms
