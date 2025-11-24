@@ -1,6 +1,6 @@
-"""Item class for the tiny RPG game.
+"""Classe `Item` pour le petit jeu RPG.
 
-Provides the `Item` class used to represent pickable objects.
+Fournit la classe `Item` utilisée pour représenter les objets ramassables.
 """
 
 

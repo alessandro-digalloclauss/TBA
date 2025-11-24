@@ -1,8 +1,9 @@
-"""Game actions.
+"""Actions du jeu.
 
-This module exposes the small set of actions used by the game loop.
-Each action is a static method accepting (game, list_of_words,
-number_of_parameters) and returns True on success.
+Ce module expose l'ensemble restreint d'actions utilisées par la boucle
+de jeu. Chaque action est une méthode statique acceptant
+`(game, list_of_words, number_of_parameters)` et renvoie `True` en cas
+de succès.
 """
 
 MSG0 = "\nLa commande '{command_word}' ne prend pas de paramètre.\n"
@@ -14,9 +15,9 @@ class Actions:
 
     @staticmethod
     def go(game, list_of_words, number_of_parameters):
-        """Move the player in a cardinal direction.
+        """Déplace le joueur dans une direction cardinale.
 
-        Expected form: go <direction>
+        Forme attendue : `go <direction>`
         """
         if len(list_of_words) != number_of_parameters + 1:
             command_word = list_of_words[0]
@@ -29,14 +30,16 @@ class Actions:
             print("\nDirection vide. Utilisez une direction (N, E, S, O, U, D).\n")
             return False
 
-        # Normalize the input and map aliases to canonical single-letter codes
+        # Normalise l'entrée et associe les alias aux codes canoniques
+        # d'une seule lettre (N, E, S, O, U, D).
         key = raw.upper()
         canonical = None
-        # If the game provides a mapping of aliases, use it
+        # Si le jeu fournit une table d'alias, l'utiliser
         if hasattr(game, 'direction_aliases'):
             canonical = game.direction_aliases.get(key)
 
-        # If not found, accept the first letter if it matches known directions
+        # Sinon, accepter la première lettre si elle correspond à une
+        # direction connue.
         if canonical is None:
             if len(key) >= 1:
                 candidate = key[0]
@@ -45,9 +48,9 @@ class Actions:
 
         if canonical is None:
             print(f"\nDirection inconnue: '{raw}'. Utilisez N, E, S, O, U ou D.\n")
-            # Instead of printing the full 'Vous entrez ...' long description
-            # (which would be confusing here), show a short reminder of the
-            # current location: 'Vous êtes dans <nom de la pièce>'.
+            # Plutôt que d'afficher la description longue (ce qui serait
+            # déroutant ici), afficher un rappel court de la position
+            # courante : 'Vous êtes dans <nom de la pièce>'.
             current = getattr(player, 'current_room', None)
             if current is not None:
                 room_name = getattr(current, 'name', 'inconnue').replace('_', ' ')
@@ -60,7 +63,7 @@ class Actions:
 
     @staticmethod
     def quit(game, list_of_words, number_of_parameters):
-        """Quit the game after printing a farewell message."""
+        """Quitter le jeu après affichage d'un message d'au revoir."""
         if len(list_of_words) != number_of_parameters + 1:
             command_word = list_of_words[0]
             print(MSG0.format(command_word=command_word))
@@ -74,14 +77,15 @@ class Actions:
 
     @staticmethod
     def help(game, list_of_words, number_of_parameters):
-        """Print available commands and their help strings."""
+        """Afficher les commandes disponibles et leurs messages d'aide."""
         if len(list_of_words) != number_of_parameters + 1:
             command_word = list_of_words[0]
             print(MSG0.format(command_word=command_word))
             return False
         print("\nVoici les commandes disponibles:")
-        # Print commands in a stable, sorted order by command word so
-        # newly added commands like 'back' and 'history' always appear.
+        # Affiche les commandes dans un ordre trié pour que les commandes
+        # ajoutées ('back', 'history', ...) apparaissent de façon
+        # prévisible.
         for key in sorted(game.commands.keys()):
             command = game.commands[key]
             print("\t- " + str(command))
@@ -90,19 +94,19 @@ class Actions:
 
     @staticmethod
     def back(game, list_of_words, number_of_parameters):
-        """Move the player back to the previous room using the player's historique."""
+        """Ramener le joueur dans la pièce précédente en utilisant l'historique."""
         if len(list_of_words) != number_of_parameters + 1:
             command_word = list_of_words[0]
             print(MSG0.format(command_word=command_word))
             return False
 
         player = game.player
-        # Player.retour handles printing and returns True/False
+        # `player.retour()` gère l'affichage et retourne True/False
         return player.retour()
 
     @staticmethod
     def history(game, list_of_words, number_of_parameters):
-        """Print the player's history (visited rooms)."""
+        """Afficher l'historique du joueur (pièces visitées)."""
         if len(list_of_words) != number_of_parameters + 1:
             command_word = list_of_words[0]
             print(MSG0.format(command_word=command_word))
@@ -114,7 +118,7 @@ class Actions:
 
     @staticmethod
     def look(game, list_of_words, number_of_parameters):
-        """Show the items present in the current room (look command)."""
+        """Afficher les objets présents dans la pièce courante (commande look)."""
         if len(list_of_words) != number_of_parameters + 1:
             command_word = list_of_words[0]
             print(MSG0.format(command_word=command_word))
@@ -126,16 +130,16 @@ class Actions:
             print("\nVous n'êtes dans aucune pièce.\n")
             return False
 
-        # Room.look prints the inventory and returns True/False
+        # `Room.look()` affiche l'inventaire et retourne True/False
         return current.look()
 
     @staticmethod
     def take(game, list_of_words, number_of_parameters):
-        """Take an item present in the current room and add it to the player's inventory.
+        """Prendre un objet présent dans la pièce et l'ajouter à l'inventaire.
 
-        Expected form: take <item name>
+        Forme attendue : `take <nom de l'objet>`
         """
-        # Allow multi-word item names by accepting >= required tokens
+        # Autoriser les noms d'item sur plusieurs mots en acceptant >= tokens requis
         if len(list_of_words) < number_of_parameters + 1:
             command_word = list_of_words[0]
             print(MSG1.format(command_word=command_word))
@@ -147,14 +151,14 @@ class Actions:
             print("\nVous n'êtes dans aucune pièce.\n")
             return False
 
-        # Join remaining words to support multi-word item names
+        # Joindre les mots restants pour supporter les noms sur plusieurs mots
         item_name = " ".join(list_of_words[1:]).strip()
         if not item_name:
             command_word = list_of_words[0]
             print(MSG1.format(command_word=command_word))
             return False
 
-        # Check if the item exists in the room
+        # Vérifier que l'item existe dans la pièce
         if item_name not in current.inventory:
             print(f"\nIl n'y a pas d'item nommé '{item_name}' ici.\n")
             return False
@@ -167,24 +171,24 @@ class Actions:
 
     @staticmethod
     def check(game, list_of_words, number_of_parameters):
-        """Display the player's inventory (check command)."""
+        """Afficher l'inventaire du joueur (commande check)."""
         if len(list_of_words) != number_of_parameters + 1:
             command_word = list_of_words[0]
             print(MSG0.format(command_word=command_word))
             return False
 
         player = game.player
-        # Player.get_inventory returns a readable string
+        # `player.get_inventory()` renvoie une chaîne lisible
         print(player.get_inventory())
         return True
 
     @staticmethod
     def drop(game, list_of_words, number_of_parameters):
-        """Drop an item from the player's inventory into the current room.
+        """Déposer un objet de l'inventaire du joueur dans la pièce courante.
 
-        Expected form: drop <item name>
+        Forme attendue : `drop <nom de l'objet>`
         """
-        # Allow multi-word item names by accepting >= required tokens
+        # Autoriser les noms d'item sur plusieurs mots en acceptant >= tokens requis
         if len(list_of_words) < number_of_parameters + 1:
             command_word = list_of_words[0]
             print(MSG1.format(command_word=command_word))
@@ -196,19 +200,19 @@ class Actions:
             print("\nVous n'êtes dans aucune pièce.\n")
             return False
 
-        # Join remaining words to support multi-word item names
+        # Joindre les mots restants pour supporter les noms sur plusieurs mots
         item_name = " ".join(list_of_words[1:]).strip()
         if not item_name:
             command_word = list_of_words[0]
             print(MSG1.format(command_word=command_word))
             return False
 
-        # Check if the player has the item
+        # Vérifier que le joueur possède l'item
         if item_name not in player.inventory:
             print(f"\nVous n'avez pas d'item nommé '{item_name}' dans votre inventaire.\n")
             return False
 
-        # Remove from player inventory and add to room inventory
+        # Retirer de l'inventaire du joueur et ajouter à l'inventaire de la pièce
         obj = player.inventory.pop(item_name)
         current.inventory[item_name] = obj
         print(f"\nVous avez reposé '{item_name}' dans la pièce.\n")

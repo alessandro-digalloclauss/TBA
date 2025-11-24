@@ -1,39 +1,39 @@
-"""Player representation.
+"""Représentation du joueur.
 
-This module provides a small Player class that tracks the player's
-name and current room and handles movement between rooms.
+Ce module fournit une classe `Player` légère qui mémorise le nom du
+joueur, la pièce courante et gère les déplacements entre pièces.
 """
 
 
 class Player:
-    """Represents the player and their current location."""
+    """Représente le joueur et sa position actuelle."""
 
     def __init__(self, name):
-        """Create a player with the given display name."""
+        """Créer un joueur avec le nom d'affichage fourni."""
         self.name = name
         self.current_room = None
-        # historique: stack (list) of previously visited Room objects
-        # Use append() to add a room and pop() to go back.
+        # historique : pile (list) des Room visitées précédemment
+        # Utiliser append() pour empiler une salle et pop() pour revenir.
         self.historique = []
-        # inventaire: dictionnaire d'objets ramassés (name -> Item instance or count)
+        # inventaire : dictionnaire d'objets ramassés (name -> Item instance ou valeur)
         # Initialisé vide.
         self.inventory = {}
 
     def move(self, direction):
-        """Attempt to move the player in `direction`.
+        """Tente de déplacer le joueur dans `direction`.
 
-        Returns True and prints the new room description on success,
-        or returns False and prints an error message when movement is
-        not possible.
+        Renvoie True et affiche la description de la nouvelle pièce en cas
+        de succès, ou False et affiche un message d'erreur si le mouvement
+        n'est pas possible.
         """
-        # Use dict.get to avoid KeyError if direction is missing.
+        # Utiliser dict.get pour éviter KeyError si la direction est absente.
         next_room = self.current_room.exits.get(direction)
 
         if next_room is None:
             print("\nAucune porte dans cette direction !\n")
             return False
 
-        # push current room to historique before moving
+        # Empiler la pièce courante dans l'historique avant de bouger
         if self.current_room is not None:
             self.historique.append(self.current_room)
 
@@ -42,9 +42,9 @@ class Player:
         return True
 
     def retour(self):
-        """Return to the previous room using the historique stack.
+        """Revenir à la pièce précédente en utilisant la pile d'historique.
 
-        Returns True if the return succeeded, False if there is no history.
+        Renvoie True si le retour a réussi, False si l'historique est vide.
         """
         if not self.historique:
             print("\nImpossible de revenir en arrière : historique vide.\n")
@@ -56,19 +56,19 @@ class Player:
         return True
 
     def get_history(self):
-        """Return a readable string representing the visited rooms history.
+        """Retourne une chaîne lisible représentant l'historique des pièces.
 
-        The history lists rooms in the order they were visited (oldest first).
-        Each entry is the room's name (underscores replaced by spaces),
-        listed oldest first.
+        L'historique liste les pièces dans l'ordre de visite (la plus ancienne
+        en premier). Chaque entrée utilise le nom de la pièce (les underscores
+        sont remplacés par des espaces).
         """
         if not self.historique:
             return "Vous n'avez encore visité aucune pièce."
 
         lines = ["Vous avez déjà visité les pièces suivantes:"]
         for room in self.historique:
-            # Use the room's name and make it more readable by replacing
-            # underscores with spaces (e.g. 'Salon_Victorien' -> 'Salon Victorien').
+            # Utiliser le nom de la pièce en le rendant lisible (remplacer
+            # les underscores par des espaces, ex. 'Salon_Victorien' -> 'Salon Victorien').
             name = getattr(room, 'name', 'inconnue')
             name = name.replace('_', ' ')
             lines.append(f" - {name}")
@@ -76,21 +76,20 @@ class Player:
         return "\n".join(lines)
 
     def get_inventory(self) -> str:
-        """Return a readable string representing the player's inventory.
+        """Retourne une chaîne lisible représentant l'inventaire du joueur.
 
-        If the inventory is empty, returns a short message in French.
-        Otherwise returns a header line followed by one entry per item.
-        The inventory is a dict mapping item names to item objects (or other
-        values). If the stored value looks like an item (has a description
-        attribute) we use its string representation; otherwise we fall back
-        to the stored value's string form.
+        Si l'inventaire est vide, renvoie un message court en français. Sinon
+        renvoie une ligne d'en-tête suivie d'une entrée par item. L'inventaire
+        est un dict mappant le nom de l'item à l'objet (ou autre valeur). Si
+        la valeur ressemble à un Item (attributs `description` et `weight`),
+        on utilise sa représentation chaîne, sinon on utilise str(value).
         """
         if not self.inventory:
             return "Votre inventaire est vide."
 
         lines = ["Vous disposez des items suivants :"]
         for name, obj in self.inventory.items():
-            # If obj is an Item-like object, prefer its __str__ output.
+            # Si obj ressemble à un Item, préférer son __str__.
             if hasattr(obj, "description") and hasattr(obj, "weight"):
                 lines.append(f" - {obj}")
             else:

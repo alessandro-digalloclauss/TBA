@@ -1,30 +1,30 @@
 # Description: Game class
 
-"""Simple text-adventure game module.
+"""Module principal du jeu d'aventure textuel.
 
-Contains the Game class which wires rooms, commands and the player
-and runs the main loop.
+Contient la classe `Game` qui assemble les pièces, les commandes et le
+joueur, et exécute la boucle principale du jeu.
 """
 
-# Import modules
+# Import des modules
 
 from room import Room
 from player import Player
 from command import Command
 from actions import Actions
 
-class Game:
-    """Main game container: rooms, commands, and player state."""
 
-    # Constructor
+class Game:
+    """Conteneur principal du jeu : pièces, commandes et état du joueur."""
+
     def __init__(self):
         self.finished = False
         self.rooms = []
         self.commands = {}
         self.player = None
-        # Initialize directions and aliases early so they exist
-        # even if _create_world() is used directly in tests.
-        self.directions = set(["N", "E", "S", "O", "U", "D"])  # nord, est, sud, ouest, up, down
+        # Initialiser les directions et alias tôt pour qu'ils existent
+        # même si _create_world() est appelé directement dans des tests.
+        self.directions = set(["N", "E", "S", "O", "U", "D"])  # nord, est, sud, ouest, haut, bas
         self.direction_aliases = {
             "N": "N",
             "NORD": "N",
@@ -42,12 +42,12 @@ class Game:
             "BAS": "D",
             "DOWN": "D",
         }
-    
-    # Setup the game
-    def setup(self):
-        """Create rooms, commands and place the player in the starting room."""
 
-        # Setup commands
+    # Configuration du jeu
+    def setup(self):
+        """Créer les pièces, déclarer les commandes et placer le joueur dans la pièce de départ."""
+
+        # Déclaration des commandes
 
         cmd_help = Command("help", " : afficher cette aide", Actions.help, 0)
         self.commands["help"] = cmd_help
@@ -83,10 +83,11 @@ class Game:
             1,
         )
         self.commands["drop"] = cmd_drop
-        # Directions used in the game (canonical single-letter codes)
-        # and aliases mapping various user inputs to the canonical code.
-        self.directions = set(["N", "E", "S", "O", "U", "D"])  # nord, est, sud, ouest, up, down
-        # Map common words/variants (case-insensitive) to canonical direction letters.
+        # Directions utilisées dans le jeu (codes canoniques d'une lettre)
+        # et table d'alias qui mappe différentes entrées utilisateur vers
+        # le code canonique.
+        self.directions = set(["N", "E", "S", "O", "U", "D"])  # nord, est, sud, ouest, haut, bas
+        # Mappe mots/variants usuels (insensibles à la casse) vers les lettres canoniques.
         self.direction_aliases = {
             "N": "N",
             "NORD": "N",
@@ -105,20 +106,20 @@ class Game:
             "BAS": "D",
             "DOWN": "D",
         }
-        # Create world (rooms, inventories, exits)
+        # Création du monde (pièces, inventaires, sorties)
         start_room = self._create_world()
 
-        # Setup player and starting room
+        # Configuration du joueur et pièce de départ
         self.player = Player(input("\nEntrez votre nom: "))
-        # Start player in the hall by default
+        # Placer le joueur dans la salle de départ
         self.player.current_room = start_room
 
     def _create_world(self):
-        """Create rooms, populate inventories and wire exits.
+        """Créer les pièces, peupler les inventaires et relier les sorties.
 
-        Returns the starting room (hall).
+        Retourne la pièce de départ (hall).
         """
-        # Create all rooms and keep them in a dict for easy referencing
+        # Créer toutes les pièces et les stocker dans un dict pour y référer facilement
         rooms = {}
         rooms['jardin_hiver'] = Room(
             'Jardin_hiver',
@@ -203,10 +204,10 @@ class Game:
             "tremblante."
         )
 
-        # Collect rooms in the game's room list
+        # Collecter les pièces dans la liste du jeu
         self.rooms = list(rooms.values())
 
-        # Add a few example items into some rooms (name -> description)
+        # Ajouter quelques items d'exemple dans certaines pièces (nom -> description)
         rooms['jardin_hiver'].inventory['plante étrange'] = (
             'une plante aux feuilles veinées'
         )

@@ -1,42 +1,44 @@
-"""Room model and description helpers.
+"""Modèle de pièce et aides à la description.
 
-This module defines the Room class used by the game. Rooms support a
-rich first-visit description and a shorter description for subsequent
-visits. Ambient lines are chosen to increase immersion.
+Ce module définit la classe `Room` utilisée par le jeu. Les pièces
+peuvent avoir une description enrichie pour la première visite et une
+description plus courte pour les visites suivantes. Des lignes
+d'ambiance sont choisies pour renforcer l'immersion.
 """
 
 import random
 
 
 class Room:
-    """Representation of a room in the game world."""
+    """Représentation d'une pièce dans le monde du jeu."""
 
     def __init__(self, name, description, first_visit_description=None, short_description=None):
         """
-        name: identifier string (may include underscores)
-        description: default/short description (backwards compatible)
-        first_visit_description: optional richer text shown on first entry
-        short_description: optional short text shown on subsequent visits
+        name : identifiant de la pièce (peut contenir des underscores)
+        description : description par défaut/courte (compatibilité)
+        first_visit_description : texte enrichi montré à la première entrée
+        short_description : texte court pour les visites suivantes
         """
         self.name = name
         self.description = description
-        # Backwards compatible: if no first_visit_description provided, use the given description
+        # Compatibilité : si pas de first_visit_description fournie, utiliser description
         self.first_visit_description = first_visit_description or description
-        # Short description for later visits (defaults to a compact form)
+        # Description courte pour les visites suivantes (par défaut la description)
         self.short_description = short_description or description
         self.exits = {}
-        # visited flag to allow different first-visit description
+        # Indicateur de visite pour distinguer la première description
         self.visited = False
-        # inventory: dictionnaire d'objets présents dans la pièce (name -> Item instance)
+        # inventory : dictionnaire d'objets présents dans la pièce (name -> instance d'Item)
         # Initialisé vide.
         self.inventory = {}
 
     def get_exit(self, direction):
-        """Return the room in the given direction or None if absent."""
+        """Retourne la pièce dans la direction donnée ou None si absente."""
         return self.exits.get(direction)
 
     def get_exit_string(self):
-        # Return a readable string listing directions and destination names.
+        # Retourne une chaîne lisible listant les directions et les noms
+        # des destinations.
         parts = []
         for d, room in self.exits.items():
             if room is not None:
@@ -47,10 +49,11 @@ class Room:
         return "Sorties: " + ", ".join(parts)
 
     def _clean_description_for_entry(self, raw):
-        """Normalize a raw description to a natural entry sentence."""
+        """Normalise une description brute pour produire une phrase d'entrée naturelle."""
         desc = raw.strip()
-        # Always present the entry with 'dans' for natural phrasing.
-        # If the raw text already started with 'dans ', remove it to avoid duplication.
+        # Toujours présenter l'entrée avec 'dans' pour une tournure naturelle.
+        # Si le texte commence déjà par 'dans ', le retirer pour éviter la
+        # duplication.
         if desc.lower().startswith("dans "):
             core = desc[5:]
         else:
@@ -58,7 +61,8 @@ class Room:
         return f"Vous entrez dans {core}"
 
     def _contextual_ambience(self, raw):
-        # Choose an ambience phrase, and add contextual lines for known keywords.
+        # Choisit une phrase d'ambiance et ajoute des lignes contextuelles
+        # pour des mots-clés reconnus.
         base_ambiances = [
             "Un léger courant d'air frissonne contre votre nuque.",
             "Une odeur particulière flotte dans l'air.",
@@ -85,37 +89,39 @@ class Room:
         raw_lower = raw.lower()
         for kw, line in keywords_ambiances.items():
             if kw in raw_lower:
-                # prefer a contextual line when a keyword is present
-                # occasionally append it to the chosen ambience
+                # Préférer une ligne contextuelle lorsqu'un mot-clé est présent
+                # et parfois l'appendre à l'ambiance choisie.
                 if random.random() < 0.7:
                     return line
                 return f"{ambience} {line}"
         return ambience
 
     def get_long_description(self):
-        """Return a rich description. Uses first_visit_description on first call, then short_description."""
+        """Retourne une description riche. Utilise first_visit_description lors
+        de la première visite, puis short_description.
+        """
         header = self.name.replace("_", " ")
 
-        # choose which base description to use
+        # Choisir la description de base à utiliser
         base = self.first_visit_description if not self.visited else self.short_description
 
         entry = self._clean_description_for_entry(base)
         ambience = self._contextual_ambience(base)
         exits = self.get_exit_string()
 
-        # mark visited so next time we show the short description
+        # Marquer comme visité afin d'afficher la description courte la fois suivante
         self.visited = True
 
         return f"\n-- {header} --\n\n{entry}. {ambience}\n\n{exits}\n"
 
     def get_inventory(self) -> str:
-        """Return a readable string representing the items present in this room.
+        """Retourne une chaîne lisible représentant les items présents dans la pièce.
 
-        If the room has no items, returns a short message in French.
-        Otherwise returns a header line followed by one entry per item. If
-        the stored value looks like an Item (has a description and weight)
-        we use its string representation; otherwise we fall back to the
-        stored value's string form.
+        Si la pièce ne contient aucun item, renvoie un court message en
+        français. Sinon renvoie une ligne d'en-tête suivie d'une entrée par
+        item. Si la valeur stockée ressemble à un Item (attributs
+        `description` et `weight`), on utilise sa représentation chaîne,
+        sinon on tombe en repli sur str(obj).
         """
         if not self.inventory:
             return "Il n'y a rien ici."
@@ -130,11 +136,11 @@ class Room:
         return "\n".join(lines)
 
     def look(self):
-        """Display the items present in this room.
+        """Afficher les objets présents dans cette pièce.
 
-        This method prints a user-friendly list of items (delegates to
-        `get_inventory`) so Actions.look can call it directly.
-        Returns True after printing for consistency with action handlers.
+        Cette méthode imprime une liste lisible des items (déléguée à
+        `get_inventory`) pour que `Actions.look` puisse l'appeler.
+        Retourne True après affichage pour cohérence avec les handlers.
         """
         print(self.get_inventory())
         return True

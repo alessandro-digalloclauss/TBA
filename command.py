@@ -1,23 +1,24 @@
-"""Command helper used by the game.
+"""Assistant de commande utilisé par le jeu.
 
-Defines a small Command class that packages a command word, a help
-string, an action callable and the expected number of parameters.
+Définit une petite classe `Command` qui regroupe le mot-clé de la
+commande, une chaîne d'aide, la fonction d'action et le nombre
+attendu de paramètres.
 """
 
 
 class Command:
-    """Represents a player command.
+    """Représente une commande du joueur.
 
-    Attributes
-    ----------
+    Attributs
+    ---------
     command_word : str
-        The keyword used to invoke the command.
+        Mot-clé utilisé pour invoquer la commande.
     help_string : str
-        A short help text shown in the help list.
+        Bref texte d'aide affiché dans la liste des commandes.
     action : callable
-        The function called to execute the command.
+        Fonction appelée pour exécuter la commande.
     number_of_parameters : int
-        How many parameters the command expects.
+        Nombre de paramètres attendus par la commande.
     """
 
     def __init__(self, command_word, help_string, action, number_of_parameters):
