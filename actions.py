@@ -134,6 +134,88 @@ class Actions:
         return current.look()
 
     @staticmethod
+    def talk(game, list_of_words, number_of_parameters):
+        """Parler à un personnage non joueur présent dans la pièce.
+
+        Forme attendue : `talk <nom>`
+        """
+        if len(list_of_words) < number_of_parameters + 1:
+            command_word = list_of_words[0]
+            print(MSG1.format(command_word=command_word))
+            return False
+
+        player = game.player
+        current = getattr(player, 'current_room', None)
+        if current is None:
+            print("\nVous n'êtes dans aucune pièce.\n")
+            return False
+
+        # Supporte les noms sur plusieurs mots
+        target_name = " ".join(list_of_words[1:]).strip()
+        if not target_name:
+            command_word = list_of_words[0]
+            print(MSG1.format(command_word=command_word))
+            return False
+
+        # Recherche robuste des personnages présents (plusieurs stratégies):
+        found = None
+        tn = target_name.lower()
+
+        # 1) recherche directe sur la clé telle quelle
+        if target_name in current.characters:
+            found = current.characters[target_name]
+
+        # 2) recherche par nom exact insensible à la casse
+        if found is None:
+            for char in current.characters.values():
+                if getattr(char, 'name', '').lower() == tn:
+                    found = char
+                    break
+
+        # 3) recherche par clé insensible à la casse
+        if found is None:
+            for k, v in current.characters.items():
+                if k.lower() == tn:
+                    found = v
+                    break
+
+        # 4) recherche par préfixe / inclusion (pour accepter 'gand' -> 'Gandalf')
+        if found is None:
+            for v in current.characters.values():
+                n = getattr(v, 'name', '').lower()
+                if n.startswith(tn) or tn in n:
+                    found = v
+                    break
+
+        if not found:
+            # Fournir une liste des PNJ présents pour guider l'utilisateur
+            if current.characters:
+                present = [getattr(c, 'name', k) for k, c in current.characters.items()]
+                present_list = ", ".join(present)
+                print(f"\nIl n'y a aucun personnage nommé '{target_name}' ici. Personnages présents: {present_list}\n")
+            else:
+                print(f"\nIl n'y a aucun personnage nommé '{target_name}' ici.\n")
+            return False
+
+        # Appeler la méthode get_msg() du personnage et afficher le résultat
+        if hasattr(found, 'get_msg'):
+            msg = found.get_msg()
+            if msg is None:
+                print(f"\n{found.name} ne répond pas pour l'instant.\n")
+                return False
+            print(f"\n{msg}\n")
+            # Marquer le PNJ pour qu'il reste au moins un tour après la
+            # conversation afin que le joueur puisse le re-interroger.
+            try:
+                found.stay_turns = max(getattr(found, 'stay_turns', 0), 1)
+            except Exception:
+                pass
+            return True
+        else:
+            print(f"\n{found.name} ne sait pas parler.\n")
+            return False
+
+    @staticmethod
     def take(game, list_of_words, number_of_parameters):
         """Prendre un objet présent dans la pièce et l'ajouter à l'inventaire.
 

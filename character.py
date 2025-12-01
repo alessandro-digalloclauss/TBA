@@ -15,9 +15,29 @@ class Character:
         self.description = description
         self.current_room = current_room
         self.msgs = msgs or []
+        # Nombre de tours pendant lesquels le PNJ doit rester sur place
+        # (décrémente à chaque appel à move()).
+        self.stay_turns = 0
 
     def __str__(self):
         return f"{self.name} : {self.description}"
+
+    def get_msg(self):
+        """Retourne le message suivant du personnage en faisant une rotation.
+
+        Si la liste `msgs` est vide, renvoie `None`. Sinon, on supprime et
+        retourne le premier élément, puis on l'ajoute à la fin pour permettre
+        un affichage cyclique.
+        """
+        if not self.msgs:
+            return None
+        try:
+            msg = self.msgs.pop(0)
+            # Réinsérer le message à la fin pour la rotation
+            self.msgs.append(msg)
+            return msg
+        except Exception:
+            return None
 
     def move(self):
         """Tente de déplacer le personnage.
@@ -33,6 +53,14 @@ class Character:
 
         # Si aucune pièce courante ou pas de sorties, on ne peut pas se déplacer
         if self.current_room is None:
+            return False
+
+        # Respecter le marqueur de 'stay' : si >0, décrémenter et rester
+        if getattr(self, 'stay_turns', 0) > 0:
+            try:
+                self.stay_turns -= 1
+            except Exception:
+                self.stay_turns = 0
             return False
 
         # Récupérer les pièces adjacentes valides

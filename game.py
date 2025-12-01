@@ -75,6 +75,8 @@ class Game:
         self.commands["look"] = cmd_look
         cmd_check = Command("check", " : afficher l'inventaire", Actions.check, 0)
         self.commands["check"] = cmd_check
+        cmd_talk = Command("talk", " <person> : parler à un personnage présent", Actions.talk, 1)
+        self.commands["talk"] = cmd_talk
         cmd_take = Command(
             "take",
             " <item> : prendre un objet présent dans la pièce",
@@ -395,6 +397,13 @@ class Game:
             chars = list(room.characters.values())
             for char in chars:
                 try:
+                    # Ne pas déplacer un PNJ si le joueur est dans la même pièce
+                    # (évite qu'un PNJ disparaisse immédiatement après qu'on lui a parlé).
+                    player_room = getattr(self.player, 'current_room', None)
+                    if player_room is not None and player_room is room:
+                        # Skip moving this NPC this tick
+                        continue
+
                     char.move()
                 except Exception:
                     # Ne pas interrompre le jeu pour une erreur de PNJ
