@@ -13,6 +13,11 @@ from player import Player
 from command import Command
 from actions import Actions
 from item import Item
+from character import Character
+
+# Activer pour afficher les messages de débogage dans les autres modules
+# Importable via `from game import DEBUG`
+DEBUG = False
 
 
 class Game:
@@ -212,13 +217,27 @@ class Game:
         rooms['jardin_hiver'].inventory['plante étrange'] = Item(
             'plante étrange', 'une plante aux feuilles veinées', 0.8
         )
-        rooms['hall'].inventory['cle'] = Item('cle', 'une petite clé rouillée', 11)
+        rooms['hall'].inventory['cle'] = Item('cle', 'une petite clé rouillée', 0.5)
         rooms['cuisine'].inventory['couteau'] = Item('couteau', 'un couteau émoussé', 0.5)
         rooms['bibliotheque'].inventory['grimoire'] = Item(
             'grimoire', 'un vieux grimoire relié de cuir', 1.2
         )
         rooms['cave_a_vin'].inventory['bouteille'] = Item(
             'bouteille', "une bouteille d'un millésime inconnu", 1.5
+        )
+
+        # Ajouter les personnages non joueurs dans les pièces
+        rooms['salon_victorien'].characters['Gandalf'] = Character(
+            'Gandalf',
+            'un magicien blanc',
+            rooms['salon_victorien'],
+            ['Bienvenue, voyageur!', 'Que peux-je faire pour toi?']
+        )
+        rooms['bibliotheque'].characters['Archiviste'] = Character(
+            'Archiviste',
+            'un vieux savant aux yeux scrutateurs',
+            rooms['bibliotheque'],
+            ['Les livres contiennent tous les secrets...', 'Cherches-tu quelque chose?']
         )
 
         # Create exits for rooms
@@ -352,12 +371,34 @@ class Game:
             command = self.commands[command_word]
             command.action(self, list_of_words, command.number_of_parameters)
 
+        # Avancer le monde d'un tour : tenter de déplacer les PNJ
+        # (appelé à la fin de chaque commande, reconnue ou non)
+        self.tick_npcs()
+
     # Print the welcome message
     def print_welcome(self):
         """Show a short welcome and the current room description."""
         print(f"\nBienvenue {self.player.name} dans ce jeu d'aventure !")
         print("Entrez 'help' si vous avez besoin d'aide.")
         print(self.player.current_room.get_long_description())
+
+    def tick_npcs(self):
+        """Avance d'un tour les personnages non joueurs en appelant leur méthode `move()`.
+
+        Parcourt toutes les pièces et appelle `move()` pour chaque personnage
+        listé dans `room.characters`. On itère sur une copie pour éviter les
+        modifications durant l'itération.
+        """
+        # Pour chaque pièce, faire tenter le déplacement de chaque PNJ présent
+        for room in self.rooms:
+            # Copier la liste des personnages pour parcourir en sécurité
+            chars = list(room.characters.values())
+            for char in chars:
+                try:
+                    char.move()
+                except Exception:
+                    # Ne pas interrompre le jeu pour une erreur de PNJ
+                    pass
 
 
 def main():

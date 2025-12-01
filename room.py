@@ -31,6 +31,9 @@ class Room:
         # inventory : dictionnaire d'objets présents dans la pièce (name -> instance d'Item)
         # Initialisé vide.
         self.inventory = {}
+        # characters : dictionnaire des personnages non joueurs présents (name -> Character)
+        # Initialisé vide ; rempli depuis `Game.setup()`.
+        self.characters = {}
 
     def get_exit(self, direction):
         """Retourne la pièce dans la direction donnée ou None si absente."""
@@ -123,15 +126,23 @@ class Room:
         `description` et `weight`), on utilise sa représentation chaîne,
         sinon on tombe en repli sur str(obj).
         """
-        if not self.inventory:
+        # Si ni items ni personnages : message simple
+        if not self.inventory and not self.characters:
             return "Il n'y a rien ici."
 
-        lines = ["La pièce contient :"]
+        lines = ["On voit:"]
+
+        # Items d'abord
         for name, obj in self.inventory.items():
             if hasattr(obj, "description") and hasattr(obj, "weight"):
                 lines.append(f" - {obj}")
             else:
                 lines.append(f" - {name} : {obj}")
+
+        # Puis les personnages non joueurs
+        for name, char in self.characters.items():
+            # On suppose que Character définit __str__ convenable
+            lines.append(f" - {char}")
 
         return "\n".join(lines)
 
