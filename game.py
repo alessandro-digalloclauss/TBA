@@ -14,6 +14,7 @@ from command import Command
 from actions import Actions
 from item import Item
 from character import Character
+from quest import Quest
 
 # Activer pour afficher les messages de débogage dans les autres modules
 # Importable via `from game import DEBUG`
@@ -91,6 +92,18 @@ class Game:
             1,
         )
         self.commands["drop"] = cmd_drop
+        cmd_quests = Command("quests", " : afficher la liste des quêtes", Actions.quests, 0)
+        self.commands["quests"] = cmd_quests
+        cmd_quest = Command(
+            "quest", " <titre> : afficher les détails d'une quête", Actions.quest, 1
+        )
+        self.commands["quest"] = cmd_quest
+        cmd_activate = Command(
+            "activate", " <titre> : activer une quête", Actions.activate, 1
+        )
+        self.commands["activate"] = cmd_activate
+        cmd_rewards = Command("rewards", " : afficher vos récompenses", Actions.rewards, 0)
+        self.commands["rewards"] = cmd_rewards
         # Directions utilisées dans le jeu (codes canoniques d'une lettre)
         # et table d'alias qui mappe différentes entrées utilisateur vers
         # le code canonique.
@@ -121,6 +134,62 @@ class Game:
         self.player = Player(input("\nEntrez votre nom: "))
         # Placer le joueur dans la salle de départ
         self.player.current_room = start_room
+
+        # Initialiser les quêtes
+        self._setup_quests()
+
+    def _setup_quests(self):
+        """Initialiser les quêtes du jeu."""
+        # Quête d'exploration du manoir
+        exploration_quest = Quest(
+            title="Explorateur du Manoir",
+            description="Explorez les différentes pièces du manoir mystérieux.",
+            objectives=[
+                "Visiter Hall",
+                "Visiter Salon_Victorien",
+                "Visiter Bibliotheque",
+                "Visiter Bureau",
+                "Visiter Chambre",
+            ],
+            reward="Titre de Grand Explorateur",
+        )
+
+        # Quête de déplacement
+        travel_quest = Quest(
+            title="Grand Voyageur",
+            description="Déplacez-vous 10 fois à travers le manoir.",
+            objectives=["Se déplacer 10 fois"],
+            reward="Bottes de voyageur",
+        )
+
+        # Quête des lieux secrets
+        secrets_quest = Quest(
+            title="Découvreur de Secrets",
+            description="Découvrez les lieux les plus mystérieux du manoir.",
+            objectives=[
+                "Visiter Pièce_cachée",
+                "Visiter Cave_a_vin",
+                "Visiter Atelier",
+            ],
+            reward="Clé dorée",
+        )
+
+        # Quête de rencontre avec les PNJ
+        pnj_quest = Quest(
+            title="Rencontres Mystérieuses",
+            description="Parlez aux habitants du manoir.",
+            objectives=[
+                "parler avec Gandalf",
+                "parler avec Archiviste",
+            ],
+            reward="Connaissance ancienne",
+        )
+
+        # Ajouter les quêtes au gestionnaire du joueur
+        self.player.quest_manager.add_quest(exploration_quest)
+        self.player.quest_manager.add_quest(travel_quest)
+        self.player.quest_manager.add_quest(secrets_quest)
+        self.player.quest_manager.add_quest(pnj_quest)
 
     def _create_world(self):
         """Créer les pièces, peupler les inventaires et relier les sorties.

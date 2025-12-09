@@ -210,6 +210,8 @@ class Actions:
                 found.stay_turns = max(getattr(found, 'stay_turns', 0), 1)
             except Exception:
                 pass
+            # Vérifier les objectifs de quête pour la conversation
+            game.player.quest_manager.check_action_objectives("parler", found.name)
             return True
         else:
             print(f"\n{found.name} ne sait pas parler.\n")
@@ -366,4 +368,75 @@ class Actions:
             w_display = ""
 
         print(f"\nVous avez reposé '{item_name}'{w_display} dans la pièce.\n")
+        return True
+
+    @staticmethod
+    def quests(game, list_of_words, number_of_parameters):
+        """Afficher la liste de toutes les quêtes.
+
+        Forme attendue: `quests`
+        """
+        if len(list_of_words) != number_of_parameters + 1:
+            command_word = list_of_words[0]
+            print(MSG0.format(command_word=command_word))
+            return False
+
+        game.player.quest_manager.show_quests()
+        return True
+
+    @staticmethod
+    def quest(game, list_of_words, number_of_parameters):
+        """Afficher les détails d'une quête spécifique.
+
+        Forme attendue: `quest <titre>`
+        """
+        if len(list_of_words) < number_of_parameters + 1:
+            command_word = list_of_words[0]
+            print(MSG1.format(command_word=command_word))
+            return False
+
+        # Récupérer le titre de la quête (peut contenir plusieurs mots)
+        quest_title = " ".join(list_of_words[1:])
+
+        # Préparer les compteurs actuels pour afficher la progression
+        current_counts = {"Se déplacer": game.player.move_count}
+
+        game.player.quest_manager.show_quest_details(quest_title, current_counts)
+        return True
+
+    @staticmethod
+    def activate(game, list_of_words, number_of_parameters):
+        """Activer une quête par son titre.
+
+        Forme attendue: `activate <titre>`
+        """
+        if len(list_of_words) < number_of_parameters + 1:
+            command_word = list_of_words[0]
+            print(MSG1.format(command_word=command_word))
+            return False
+
+        # Récupérer le titre de la quête (peut contenir plusieurs mots)
+        quest_title = " ".join(list_of_words[1:])
+
+        if game.player.quest_manager.activate_quest(quest_title):
+            return True
+
+        print(
+            f"\nImpossible d'activer la quête '{quest_title}'. "
+            "Vérifiez le nom ou si elle n'est pas déjà active.\n"
+        )
+        return False
+
+    @staticmethod
+    def rewards(game, list_of_words, number_of_parameters):
+        """Afficher les récompenses obtenues par le joueur.
+
+        Forme attendue: `rewards`
+        """
+        if len(list_of_words) != number_of_parameters + 1:
+            command_word = list_of_words[0]
+            print(MSG0.format(command_word=command_word))
+            return False
+
+        game.player.show_rewards()
         return True
