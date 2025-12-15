@@ -8,6 +8,16 @@ joueur, et exécute la boucle principale du jeu.
 
 # Import des modules
 
+from pathlib import Path
+import sys
+
+# Optional: import Tkinter for GUI. If unavailable, GUI will be skipped.
+try:
+    import tkinter as tk
+    from tkinter import ttk, simpledialog
+except Exception:
+    tk = None
+
 from room import Room
 from player import Player
 from command import Command
@@ -51,8 +61,12 @@ class Game:
         }
 
     # Configuration du jeu
-    def setup(self):
-        """Créer les pièces, déclarer les commandes et placer le joueur dans la pièce de départ."""
+    def setup(self, player_name=None):
+        """Créer les pièces, déclarer les commandes et placer le joueur dans la pièce de départ.
+
+        Si `player_name` est fourni, il est utilisé sans demander à l'utilisateur
+        (utile pour l'interface graphique qui demande le nom via un dialogue).
+        """
 
         # Déclaration des commandes
 
@@ -131,7 +145,12 @@ class Game:
         start_room = self._create_world()
 
         # Configuration du joueur et pièce de départ
-        self.player = Player(input("\nEntrez votre nom: "))
+        if player_name is None:
+            name = input("\nEntrez votre nom: ")
+        else:
+            name = player_name
+
+        self.player = Player(name)
         # Placer le joueur dans la salle de départ
         self.player.current_room = start_room
 
@@ -479,9 +498,497 @@ class Game:
                     pass
 
 
+##############################
+# Tkinter GUI Implementation #
+##############################
+
+
+class _StdoutRedirector:
+    """Redirect sys.stdout writes into a Tkinter Text widget."""
+
+    def __init__(self, text_widget):
+        self.text_widget = text_widget
+
+    def write(self, msg):
+        """Write message to the Text widget."""
+        if msg:
+            self.text_widget.configure(state="normal")
+            self.text_widget.insert("end", msg)
+            self.text_widget.see("end")
+            self.text_widget.configure(state="disabled")
+
+    def flush(self):
+        """Flush method required by sys.stdout interface (no-op for Text widget)."""
+
+
+class GameGUI(tk.Tk):
+    """Tkinter GUI for the text-based adventure game.
+
+    Layout:
+    ┌─────────────────────────────────────────────────────────────┐
+    │  [Image 400x300]     │  [Info Panel: Lieu, Objets, PNJ]    │
+    ├─────────────────────────────────────────────────────────────┤
+    │  [Terminal Output - Scrollable]    │  [Boutons Actions]    │
+    ├─────────────────────────────────────────────────────────────┤
+    │  [Inventaire]                      │  [Entry + Send]       │
+    └─────────────────────────────────────────────────────────────┘
+    """
+
+    IMAGE_WIDTH = 400
+    IMAGE_HEIGHT = 300
+
+    def __init__(self):
+        super().__init__()
+        self.title("TBA - Aventure Textuelle")
+        self.geometry("1100x750")  # Plus large pour tout afficher
+        self.minsize(1000, 700)
+
+        # Underlying game logic instance
+        self.game = Game()
+
+        # Ask player name via dialog (fallback to 'Joueur')
+        name = simpledialog.askstring("Nom", "Entrez votre nom:", parent=self)
+        if not name:
+            name = "Joueur"
+        self.game.setup(player_name=name)  # Pass name to avoid double prompt
+
+        # Build UI layers
+        self._build_layout()
+
+        # Redirect stdout so game prints appear in terminal output area
+        self.original_stdout = sys.stdout
+        sys.stdout = _StdoutRedirector(self.text_output)
+
+        # Print welcome text in GUI
+        self.game.print_welcome()
+
+        # Update all panels
+        self._update_all_panels()
+
+        # Handle window close
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
+
+    # -------- Layout construction --------
+    def _build_layout(self):
+        """Construire l'interface avec tous les panneaux."""
+        # Configure root grid: 3 rows, 2 columns
+        self.grid_rowconfigure(0, weight=0)  # Top: Image + Info
+        self.grid_rowconfigure(1, weight=1)  # Middle: Terminal + Actions
+        self.grid_rowconfigure(2, weight=0)  # Bottom: Inventory + Entry
+        self.grid_columnconfigure(0, weight=1)  # Left side expands
+        self.grid_columnconfigure(1, weight=0)  # Right side fixed
+
+        # Load button images
+        assets_dir = Path(__file__).parent / 'assets'
+        self._btn_help = tk.PhotoImage(file=assets_dir / 'help-50.png') if (assets_dir / 'help-50.png').exists() else None
+        self._btn_up = tk.PhotoImage(file=assets_dir / 'up-arrow-50.png') if (assets_dir / 'up-arrow-50.png').exists() else None
+        self._btn_down = tk.PhotoImage(file=assets_dir / 'down-arrow-50.png') if (assets_dir / 'down-arrow-50.png').exists() else None
+        self._btn_left = tk.PhotoImage(file=assets_dir / 'left-arrow-50.png') if (assets_dir / 'left-arrow-50.png').exists() else None
+        self._btn_right = tk.PhotoImage(file=assets_dir / 'right-arrow-50.png') if (assets_dir / 'right-arrow-50.png').exists() else None
+        self._btn_quit = tk.PhotoImage(file=assets_dir / 'quit-50.png') if (assets_dir / 'quit-50.png').exists() else None
+
+        # ============ ROW 0: TOP - Image + Room Info ============
+        top_frame = ttk.Frame(self)
+        top_frame.grid(row=0, column=0, columnspan=2, sticky="nsew", padx=6, pady=(6, 3))
+        top_frame.grid_columnconfigure(0, weight=0)
+        top_frame.grid_columnconfigure(1, weight=1)
+
+        # Image area (left)
+        image_frame = ttk.LabelFrame(top_frame, text="🗺️ Lieu")
+        image_frame.grid(row=0, column=0, sticky="nw", padx=(0, 6))
+        
+        canvas_container = ttk.Frame(image_frame, width=self.IMAGE_WIDTH, height=self.IMAGE_HEIGHT)
+        canvas_container.pack(padx=5, pady=5)
+        canvas_container.pack_propagate(False)
+        
+        self.canvas = tk.Canvas(canvas_container,
+                                width=self.IMAGE_WIDTH,
+                                height=self.IMAGE_HEIGHT,
+                                bg="#1a1a2e")
+        self.canvas.pack(fill="both", expand=True)
+        self._image_ref = None
+
+        # Room info panel (right of image)
+        info_frame = ttk.Frame(top_frame)
+        info_frame.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
+        info_frame.grid_rowconfigure(0, weight=0)
+        info_frame.grid_rowconfigure(1, weight=1)
+        info_frame.grid_rowconfigure(2, weight=1)
+        info_frame.grid_columnconfigure(0, weight=1)
+
+        # Room name and description
+        room_frame = ttk.LabelFrame(info_frame, text="📍 Lieu actuel")
+        room_frame.grid(row=0, column=0, sticky="ew", pady=(0, 4))
+        self.room_label = tk.Label(room_frame, text="", font=("Helvetica", 12, "bold"),
+                                   bg="#1a1a2e", fg="#eee", anchor="w", wraplength=350)
+        self.room_label.pack(fill="x", padx=5, pady=3)
+        self.exits_label = tk.Label(room_frame, text="", font=("Helvetica", 10),
+                                    bg="#16213e", fg="#aaa", anchor="w")
+        self.exits_label.pack(fill="x", padx=5, pady=(0, 3))
+
+        # Objects in room
+        objects_frame = ttk.LabelFrame(info_frame, text="📦 Objets dans la pièce")
+        objects_frame.grid(row=1, column=0, sticky="nsew", pady=4)
+        self.objects_listbox = tk.Listbox(objects_frame, height=4, bg="#16213e", fg="#eee",
+                                          selectbackground="#e94560", font=("Helvetica", 10))
+        self.objects_listbox.pack(fill="both", expand=True, padx=5, pady=5)
+        self.objects_listbox.bind("<Double-1>", lambda e: self._take_selected())
+
+        # Characters in room
+        chars_frame = ttk.LabelFrame(info_frame, text="👥 Personnages présents")
+        chars_frame.grid(row=2, column=0, sticky="nsew", pady=4)
+        self.chars_listbox = tk.Listbox(chars_frame, height=3, bg="#16213e", fg="#eee",
+                                        selectbackground="#e94560", font=("Helvetica", 10))
+        self.chars_listbox.pack(fill="both", expand=True, padx=5, pady=5)
+        self.chars_listbox.bind("<Double-1>", lambda e: self._talk_selected())
+
+        # ============ ROW 1: MIDDLE - Terminal + Actions ============
+        middle_frame = ttk.Frame(self)
+        middle_frame.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=6, pady=3)
+        middle_frame.grid_columnconfigure(0, weight=1)
+        middle_frame.grid_columnconfigure(1, weight=0)
+        middle_frame.grid_rowconfigure(0, weight=1)
+
+        # Terminal output (left)
+        terminal_frame = ttk.LabelFrame(middle_frame, text="📜 Terminal")
+        terminal_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
+        terminal_frame.grid_rowconfigure(0, weight=1)
+        terminal_frame.grid_columnconfigure(0, weight=1)
+
+        scrollbar = ttk.Scrollbar(terminal_frame, orient="vertical")
+        self.text_output = tk.Text(terminal_frame,
+                                   wrap="word",
+                                   yscrollcommand=scrollbar.set,
+                                   state="disabled",
+                                   bg="#0f0f23", fg="#00ff00",
+                                   font=("Courier", 11),
+                                   height=12)
+        scrollbar.config(command=self.text_output.yview)
+        self.text_output.grid(row=0, column=0, sticky="nsew", padx=(5, 0), pady=5)
+        scrollbar.grid(row=0, column=1, sticky="ns", padx=(0, 5), pady=5)
+
+        # Actions panel (right)
+        actions_panel = ttk.Frame(middle_frame)
+        actions_panel.grid(row=0, column=1, sticky="ns")
+
+        btn_style = {"width": 12, "pady": 2, "font": ("Helvetica", 9)}
+
+        # Help button
+        tk.Button(actions_panel,
+                  image=self._btn_help if self._btn_help else None,
+                  text="❓ Aide" if self._btn_help is None else "",
+                  command=lambda: self._send_command("help"),
+                  **btn_style if self._btn_help is None else {"bd": 0}).grid(row=0, column=0, sticky="ew", pady=2)
+
+        # Movement buttons
+        move_frame = ttk.LabelFrame(actions_panel, text="🧭 Déplacements")
+        move_frame.grid(row=1, column=0, sticky="ew", pady=4)
+        
+        tk.Button(move_frame, text="⬆ Haut", command=lambda: self._send_command("go U"),
+                  width=8).grid(row=0, column=0, columnspan=3, sticky="ew")
+        tk.Button(move_frame, image=self._btn_up if self._btn_up else None,
+                  text="N" if not self._btn_up else "",
+                  command=lambda: self._send_command("go N"), bd=0).grid(row=1, column=1)
+        tk.Button(move_frame, image=self._btn_left if self._btn_left else None,
+                  text="O" if not self._btn_left else "",
+                  command=lambda: self._send_command("go O"), bd=0).grid(row=2, column=0)
+        tk.Button(move_frame, image=self._btn_right if self._btn_right else None,
+                  text="E" if not self._btn_right else "",
+                  command=lambda: self._send_command("go E"), bd=0).grid(row=2, column=2)
+        tk.Button(move_frame, image=self._btn_down if self._btn_down else None,
+                  text="S" if not self._btn_down else "",
+                  command=lambda: self._send_command("go S"), bd=0).grid(row=3, column=1)
+        tk.Button(move_frame, text="⬇ Bas", command=lambda: self._send_command("go D"),
+                  width=8).grid(row=4, column=0, columnspan=3, sticky="ew")
+        tk.Button(move_frame, text="↩ Retour", command=lambda: self._send_command("back"),
+                  width=8).grid(row=5, column=0, columnspan=3, sticky="ew", pady=(4, 0))
+
+        # Actions buttons
+        act_frame = ttk.LabelFrame(actions_panel, text="⚡ Actions")
+        act_frame.grid(row=2, column=0, sticky="ew", pady=4)
+        
+        tk.Button(act_frame, text="👁 Regarder", command=lambda: self._send_command("look"),
+                  **btn_style).grid(row=0, column=0, sticky="ew", pady=1)
+        tk.Button(act_frame, text="📜 Historique", command=lambda: self._send_command("history"),
+                  **btn_style).grid(row=1, column=0, sticky="ew", pady=1)
+        tk.Button(act_frame, text="✋ Prendre", command=self._prompt_take,
+                  **btn_style).grid(row=2, column=0, sticky="ew", pady=1)
+        tk.Button(act_frame, text="📦 Déposer", command=self._prompt_drop,
+                  **btn_style).grid(row=3, column=0, sticky="ew", pady=1)
+        tk.Button(act_frame, text="💬 Parler", command=self._prompt_talk,
+                  **btn_style).grid(row=4, column=0, sticky="ew", pady=1)
+
+        # Quests buttons
+        quest_frame = ttk.LabelFrame(actions_panel, text="📋 Quêtes")
+        quest_frame.grid(row=3, column=0, sticky="ew", pady=4)
+        
+        tk.Button(quest_frame, text="📋 Voir quêtes", command=lambda: self._send_command("quests"),
+                  **btn_style).grid(row=0, column=0, sticky="ew", pady=1)
+        tk.Button(quest_frame, text="🏆 Récompenses", command=lambda: self._send_command("rewards"),
+                  **btn_style).grid(row=1, column=0, sticky="ew", pady=1)
+
+        # Quit button
+        tk.Button(actions_panel,
+                  image=self._btn_quit if self._btn_quit else None,
+                  text="🚪 Quitter" if self._btn_quit is None else "",
+                  command=lambda: self._send_command("quit"),
+                  **btn_style if self._btn_quit is None else {"bd": 0}).grid(row=4, column=0, sticky="ew", pady=(8, 2))
+
+        # ============ ROW 2: BOTTOM - Inventory + Entry ============
+        bottom_frame = ttk.Frame(self)
+        bottom_frame.grid(row=2, column=0, columnspan=2, sticky="ew", padx=6, pady=(3, 6))
+        bottom_frame.grid_columnconfigure(0, weight=1)
+        bottom_frame.grid_columnconfigure(1, weight=2)
+
+        # Inventory panel (left)
+        inv_frame = ttk.LabelFrame(bottom_frame, text="🎒 Inventaire")
+        inv_frame.grid(row=0, column=0, sticky="ew", padx=(0, 6))
+        
+        self.inventory_listbox = tk.Listbox(inv_frame, height=3, bg="#16213e", fg="#eee",
+                                            selectbackground="#e94560", font=("Helvetica", 10))
+        self.inventory_listbox.pack(fill="x", padx=5, pady=5)
+        self.inventory_listbox.bind("<Double-1>", lambda e: self._drop_selected())
+
+        # Command entry (right)
+        entry_frame = ttk.LabelFrame(bottom_frame, text="⌨️ Commande")
+        entry_frame.grid(row=0, column=1, sticky="ew")
+        entry_frame.grid_columnconfigure(0, weight=1)
+
+        entry_container = ttk.Frame(entry_frame)
+        entry_container.pack(fill="x", padx=5, pady=5)
+        entry_container.grid_columnconfigure(0, weight=1)
+
+        self.entry_var = tk.StringVar()
+        self.entry = ttk.Entry(entry_container, textvariable=self.entry_var, font=("Courier", 11))
+        self.entry.grid(row=0, column=0, sticky="ew", padx=(0, 5))
+        self.entry.bind("<Return>", self._on_enter)
+        self.entry.focus_set()
+
+        send_btn = tk.Button(entry_container, text="Envoyer", command=self._on_enter,
+                             bg="#e94560", fg="white", font=("Helvetica", 10, "bold"))
+        send_btn.grid(row=0, column=1)
+
+
+    # -------- Panel updates --------
+    def _update_all_panels(self):
+        """Mettre à jour tous les panneaux d'information."""
+        self._update_room_image()
+        self._update_room_info()
+        self._update_objects_list()
+        self._update_characters_list()
+        self._update_inventory_list()
+
+    def _update_room_info(self):
+        """Mettre à jour les informations sur la pièce actuelle."""
+        if not self.game.player or not self.game.player.current_room:
+            return
+        room = self.game.player.current_room
+        room_name = room.name.replace("_", " ")
+        self.room_label.config(text=f"📍 {room_name}")
+        self.exits_label.config(text=room.get_exit_string())
+
+    def _update_objects_list(self):
+        """Mettre à jour la liste des objets dans la pièce."""
+        self.objects_listbox.delete(0, tk.END)
+        if not self.game.player or not self.game.player.current_room:
+            return
+        room = self.game.player.current_room
+        for item_name, item in room.inventory.items():
+            self.objects_listbox.insert(tk.END, f"  {item_name} - {item.description}")
+
+    def _update_characters_list(self):
+        """Mettre à jour la liste des personnages présents."""
+        self.chars_listbox.delete(0, tk.END)
+        if not self.game.player or not self.game.player.current_room:
+            return
+        room = self.game.player.current_room
+        for char_name, char in room.characters.items():
+            self.chars_listbox.insert(tk.END, f"  {char_name} - {char.description}")
+
+    def _update_inventory_list(self):
+        """Mettre à jour l'inventaire du joueur."""
+        self.inventory_listbox.delete(0, tk.END)
+        if not self.game.player:
+            return
+        if not self.game.player.inventory:
+            self.inventory_listbox.insert(tk.END, "  (vide)")
+        else:
+            for item_name, item in self.game.player.inventory.items():
+                self.inventory_listbox.insert(tk.END, f"  {item_name} ({item.weight} kg)")
+
+    # -------- Image update --------
+    def _update_room_image(self):
+        """Update the canvas image based on the current room."""
+        if not self.game.player or not self.game.player.current_room:
+            return
+
+        room = self.game.player.current_room
+        assets_dir = Path(__file__).parent / 'assets'
+
+        # Use room-specific image if available, otherwise fallback
+        if room.image:
+            image_path = assets_dir / room.image
+        else:
+            image_path = assets_dir / 'scene.png'
+
+        try:
+            # Load new image
+            self._image_ref = tk.PhotoImage(file=image_path)
+            # Clear canvas and redraw image
+            self.canvas.delete("all")
+            self.canvas.create_image(
+                self.IMAGE_WIDTH/2,
+                self.IMAGE_HEIGHT/2,
+                image=self._image_ref
+            )
+        except Exception:
+            # Fallback to text if image not found or cannot be loaded
+            self.canvas.delete("all")
+            self.canvas.create_text(
+                self.IMAGE_WIDTH/2,
+                self.IMAGE_HEIGHT/2,
+                text=f"Image: {room.name}",
+                fill="white",
+                font=("Helvetica", 18)
+            )
+
+
+    # -------- Event handlers --------
+    def _on_enter(self, _event=None):
+        """Handle Enter key press in the entry field."""
+        value = self.entry_var.get().strip()
+        if value:
+            self._send_command(value)
+        self.entry_var.set("")
+
+
+    def _send_command(self, command):
+        if self.game.finished:
+            return
+        # Echo the command in output area
+        print(f"> {command}\n")
+        self.game.process_command(command)
+        # Update all panels after command
+        self._update_all_panels()
+        if self.game.finished:
+            # Disable further input and schedule close (brief delay to show farewell)
+            self.entry.configure(state="disabled")
+            self.after(600, self._on_close)
+
+    def _take_selected(self):
+        """Prendre l'objet sélectionné dans la liste."""
+        selection = self.objects_listbox.curselection()
+        if selection:
+            item_text = self.objects_listbox.get(selection[0])
+            item_name = item_text.strip().split(" - ")[0].strip()
+            if item_name:
+                self._send_command(f"take {item_name}")
+
+    def _drop_selected(self):
+        """Déposer l'objet sélectionné de l'inventaire."""
+        selection = self.inventory_listbox.curselection()
+        if selection:
+            item_text = self.inventory_listbox.get(selection[0])
+            if "(vide)" not in item_text:
+                item_name = item_text.strip().split(" (")[0].strip()
+                if item_name:
+                    self._send_command(f"drop {item_name}")
+
+    def _talk_selected(self):
+        """Parler au personnage sélectionné."""
+        selection = self.chars_listbox.curselection()
+        if selection:
+            char_text = self.chars_listbox.get(selection[0])
+            char_name = char_text.strip().split(" - ")[0].strip()
+            if char_name:
+                self._send_command(f"talk {char_name}")
+
+    def _prompt_talk(self):
+        """Affiche une liste des personnages présents et permet de parler à l'un d'eux."""
+        room = self.game.player.current_room
+        if not room.characters:
+            print("Il n'y a personne à qui parler ici.\n")
+            return
+        
+        # Créer une fenêtre de sélection
+        chars = list(room.characters.keys())
+        if len(chars) == 1:
+            self._send_command(f"talk {chars[0]}")
+        else:
+            choice = simpledialog.askstring(
+                "Parler",
+                f"À qui voulez-vous parler?\n({', '.join(chars)})",
+                parent=self
+            )
+            if choice:
+                self._send_command(f"talk {choice}")
+
+
+    def _prompt_take(self):
+        """Affiche une liste des objets présents et permet d'en prendre un."""
+        room = self.game.player.current_room
+        if not room.inventory:
+            print("Il n'y a rien à prendre ici.\n")
+            return
+        
+        items = list(room.inventory.keys())
+        if len(items) == 1:
+            self._send_command(f"take {items[0]}")
+        else:
+            choice = simpledialog.askstring(
+                "Prendre",
+                f"Que voulez-vous prendre?\n({', '.join(items)})",
+                parent=self
+            )
+            if choice:
+                self._send_command(f"take {choice}")
+
+
+    def _prompt_drop(self):
+        """Affiche une liste des objets dans l'inventaire et permet d'en déposer un."""
+        player_inv = self.game.player.inventory
+        if not player_inv:
+            print("Votre inventaire est vide.\n")
+            return
+        
+        items = list(player_inv.keys())
+        if len(items) == 1:
+            self._send_command(f"drop {items[0]}")
+        else:
+            choice = simpledialog.askstring(
+                "Déposer",
+                f"Que voulez-vous déposer?\n({', '.join(items)})",
+                parent=self
+            )
+            if choice:
+                self._send_command(f"drop {choice}")
+
+
+    def _on_close(self):
+        # Restore stdout and destroy window
+        sys.stdout = self.original_stdout
+        self.destroy()
+
+
 def main():
     """Module entry point: create and run the game."""
     # Create a game object and play the game
+    args = __import__('sys').argv[1:]
+    # If user asked for CLI explicitly, use console mode
+    if '--cli' in args:
+        Game().play()
+        return
+
+    # If Tkinter is available, try to launch GUI, otherwise fallback to CLI
+    if tk is not None:
+        try:
+            app = GameGUI()
+            app.mainloop()
+            return
+        except tk.TclError as e:
+            print(f"GUI indisponible ({e}). Passage en mode console.")
+
+    # Fallback to console mode
     Game().play()
 
 

@@ -12,7 +12,7 @@ import random
 class Room:
     """Représentation d'une pièce dans le monde du jeu."""
 
-    def __init__(self, name, description, first_visit_description=None, short_description=None):
+    def __init__(self, name, description, first_visit_description=None, short_description=None, image=None):
         """
         name : identifiant de la pièce (peut contenir des underscores)
         description : description par défaut/courte (compatibilité)
@@ -26,6 +26,8 @@ class Room:
         # Description courte pour les visites suivantes (par défaut la description)
         self.short_description = short_description or description
         self.exits = {}
+        # Optional image filename (in ./assets) for UI display (Tkinter)
+        self.image = image
         # Indicateur de visite pour distinguer la première description
         self.visited = False
         # inventory : dictionnaire d'objets présents dans la pièce (name -> instance d'Item)
