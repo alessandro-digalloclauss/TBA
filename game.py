@@ -90,6 +90,8 @@ class Game:
         self.commands["look"] = cmd_look
         cmd_check = Command("check", " : afficher l'inventaire", Actions.check, 0)
         self.commands["check"] = cmd_check
+        cmd_inspect = Command("inspect", " <objet> : examiner un objet en détail (nécessite une loupe)", Actions.inspect, 1)
+        self.commands["inspect"] = cmd_inspect
         cmd_talk = Command("talk", " <person> : parler à un personnage présent", Actions.talk, 1)
         self.commands["talk"] = cmd_talk
         cmd_take = Command(
@@ -153,6 +155,9 @@ class Game:
         self.player = Player(name)
         # Placer le joueur dans la salle de départ
         self.player.current_room = start_room
+
+        # Donner un outil d'investigation au joueur
+        self.player.inventory['loupe'] = Item('loupe', "une loupe d'inspection, utile pour examiner les indices", 0.2)
 
         # Initialiser les quêtes
         self._setup_quests()
@@ -219,115 +224,172 @@ class Game:
         rooms = {}
         rooms['jardin_hiver'] = Room(
             'Jardin_hiver',
-            "le jardin d'hiver, des plantes exotiques,",
-            "le jardin d'hiver, des plantes exotiques poussent en "
-            "désordre; les feuilles, encore humides, brillent sous une "
-            "vitre partiellement brisée, et l'air est lourd d'une humidité "
-            "ancienne."
+            '🌿 Jardin d’hiver',
+            'Des plantes exotiques sont en désordre sous une vitre brisée.'
         )
         rooms['hall'] = Room(
             'Hall',
-            'un vaste hall éclairé par un grand lustre.',
-            "un vaste hall, un grand lustre pend au plafond et "
-            "projette des ombres mouvantes; le marbre poli renvoie des "
-            "reflets glacés et l'espace respire un calme solennel."
+            '✨ Hall',
+            "Le vaste hall est dominé par un grand lustre immobile. L'horloge s'est arrêtée à 22:30.",
         )
         rooms['salon_victorien'] = Room(
             'Salon_Victorien',
-            'le salon victorien, il y a une grande cheminée éteinte,',
-            'le salon victorien, la grande cheminée est froide; '
-            'les fauteuils en cuir sont effrangés, et une horloge ancienne '
-            'égrène un tic-tac irrégulier qui résonne dans la pièce.'
+            '🛋️ Salon victorien',
+            'On voit des fauteuils usés, une cheminée froide et une horloge ancienne.'
         )
         rooms['cuisine'] = Room(
             'Cuisine',
-            'la cuisine, on trouve un chaudron posé sur la cuisinière,',
-            'la cuisine, un grand chaudron fume faiblement sur la '
-            'cuisinière; les couteaux sont alignés sur le plan de travail, '
-            "mais l'un d'eux manque, comme si quelqu'un était parti "
-            'précipitamment.'
+            '🍲 Cuisine',
+            "On y trouve un chaudron fumant et des couteaux alignés, l’un manque."
         )
         rooms['bureau'] = Room(
             'Bureau',
-            "le bureau les boiseries sont sombres, un cadavre gis sur le sol.",
-            "le bureau, les boiseries sombres absorbent la lumière; "
-            "un corps gît au pied d'une étagère renversée, le coffre-fort "
-            "est ouvert et des papiers éparpillés révèlent des indices "
-            "anciens et troublants."
+            'Bureau',
+            'c’est l’horreur ! Un corps gît au sol dans le bureau, entouré de sang et de papiers éparpillés.'
+            'Les vieux fauteuils ne sont pas à leur place, ils ont visiblement été bousculés'
         )
         rooms['couloir'] = Room(
             'Couloir',
-            'un long couloir sombre aux lumières vacillantes.',
-            'un long couloir, les appliques vacillent et projettent '
-            'des halos tremblants; le parquet grince et chaque pas semble '
-            "réveiller des échos du passé."
+            '🚪 Couloir',
+            'Le long couloir est sombre et le parquet grince sous vos pas.'
+            'Des traces de pas boueuses mènent vers la bibliothèque.'
         )
         rooms['chambre'] = Room(
             'Chambre',
-            'la chambre, le lit est défait, la fenêtre entrouverte,',
-            "la chambre, le lit est défait et les draps froissés; la "
-            "fenêtre est entrouverte et un parfum indéfini flotte, comme "
-            "un souvenir qu'on ne parvient pas à nommer."
+            '🛏️ Chambre',
+            'Le lit est défait et la fenêtre est entrouverte.'
         )
         rooms['bibliotheque'] = Room(
             'Bibliotheque',
-            'la bibliothèque, il y a une odeur de vieux livres,',
-            "la bibliothèque, des étagères alourdies de volumes "
-            "montent jusqu'au plafond; l'odeur du papier ancien et l'ombre "
-            "d'une échelle roulante forment un refuge poussiéreux."
+            '📖 Bibliothèque',
+            'De hauts rayonnages remplis de livres anciens couvrent les murs.'
+            'Tous sont soigneusement alignés, sauf un vieux livre mal rangé qui dépasse de l’étagère.'
         )
         rooms['piece_cachee'] = Room(
             'Pièce_cachée',
-            'une pièce secrète dissimulée derrière un mur.',
-            "une pièce secrète, une seule lanterne vacille et projette "
-            "des ombres dans lesquelles danseraient d'anciens secrets; un "
-            "coffre verrouillé repose dans un coin, promettant des "
-            "réponses et des dangers."
+            '🕯️ Pièce cachée',
+            'Une petite pièce secrète est faiblement éclairée par une lanterne.'
+            'Des parchemins en évidence sur le bureau retiennent l\'attention'
         )
         rooms['cave_a_vin'] = Room(
             'Cave_a_vin',
-            "la cave à vin est fraîche et humide. Des rangées de bouteilles",
-            "la cave à vin, l'air est frais et humide; des bouteilles "
-            "anciennes dorment dans des casiers de pierre, et une odeur de "
-            "terre et de bois mouillé rappelle des années oubliées."
+            '🍷 Cave à vin',
+            'La cave est fraîche et humide, remplie de bouteilles anciennes.'
         )
         rooms['atelier'] = Room(
             'Atelier',
-            "l'atelier, il y a des outils, des pièces mécaniques et des",
-            "l'atelier, des outils sont éparpillés et des pièces "
-            "mécaniques attendent d'être assemblées; des plans froissés "
-            "jonchent l'établi et une lampe vacillante jette une lueur "
-            "tremblante."
+            '🛠️ Atelier',
+            "Des outils et des plans froissés sont éparpillés sur l’établi."
         )
 
         # Collecter les pièces dans la liste du jeu
         self.rooms = list(rooms.values())
 
-        # Ajouter quelques items d'exemple dans certaines pièces (nom -> Item)
-        rooms['jardin_hiver'].inventory['plante étrange'] = Item(
-            'plante étrange', 'une plante aux feuilles veinées', 0.8
+        # Ajout d'items dans certaines pièces (nom -> Item)
+        # Jardin d'hiver
+        rooms['jardin_hiver'].inventory['plantes renversées'] = Item(
+            'plantes renversées', 'des plantes renversées, terre et feuilles éparpillées', 3.0
         )
+        rooms['jardin_hiver'].inventory['gants de jardinage propres'] = Item(
+            'gants de jardinage propres', "une paire de gants de jardinage propres", 0.2,
+            detail="Des gants propres mais légèrement humides, sans trace de sang ni de terre incrustée."
+        )
+
+        # Hall
         rooms['hall'].inventory['cle'] = Item('cle', 'une petite clé rouillée', 0.5)
+        rooms['hall'].inventory['manteau'] = Item('manteau', "un manteau élégant, peut-être appartenant à un invité", 1.5)
+
+        # Cuisine
         rooms['cuisine'].inventory['couteau'] = Item('couteau', 'un couteau émoussé', 0.5)
+        rooms['cuisine'].inventory['livre posé sur la table'] = Item(
+            'livre posé sur la table', 'un livre laissé sur la table, pages ouvertes', 0.8
+        )
+
+        # Salon victorien
+        rooms['salon_victorien'].inventory['lettre brûlée à moitié'] = Item(
+            'lettre brûlée à moitié', "une lettre à moitié brûlée; l'encre est encore à demi lisible", 0.05
+        )
+
+        # Bureau
+        rooms['bureau'].inventory['note froissée'] = Item('note froissée', "une note couverte de taches de sang", 0.03)
+        rooms['bureau'].inventory['corps du maître de maison'] = Item(
+            'corps du maître de maison',
+            "le corps sans vie du maître de maison, Armand de Valenbourg, étendu au sol, entouré de sang",
+            80.0,
+            detail="La pâleur du visage et une blessure profonde au torse indiquent une mort violente; quelques objets personnels sont encore serrés dans sa main."
+        )
+
+        # Chambre
+        rooms['chambre'].inventory['pistolet dans le tiroir'] = Item(
+            'pistolet dans le tiroir', 'un petit pistolet trouvé caché dans un tiroir', 1.2
+        )
+        rooms['chambre'].inventory['bijoux'] = Item('bijoux', 'un écrin contenant des bijoux précieux', 0.3)
+
+        # Bibliothèque
         rooms['bibliotheque'].inventory['grimoire'] = Item(
             'grimoire', 'un vieux grimoire relié de cuir', 1.2
         )
-        rooms['cave_a_vin'].inventory['bouteille'] = Item(
-            'bouteille', "une bouteille d'un millésime inconnu", 1.5
+        rooms['bibliotheque'].inventory['livre à la reliure étrange'] = Item(
+            'livre à la reliure étrange', 'un livre à la reliure étrange, dépasse de l\'une des étagères', 1.1,
+            detail="La reliure cache un petit mécanisme; des marques d'usure montrent qu'il a déjà été manipulé récemment."
+        )
+        rooms['bibliotheque'].inventory['échelle déplacée'] = Item('échelle déplacée', 'une échelle roulante déplacée', 5.0)
+        rooms['bibliotheque'].inventory['bougie éteinte'] = Item('bougie éteinte', 'une bougie éteinte, cire froide', 0.1)
+
+        # Pièce cachée
+        rooms['piece_cachee'].inventory['clé secrète'] = Item('clé secrète', 'une clé petite et finement ciselée', 0.1,
+            detail="Très fine, pourrait ouvrir un petit coffret ou un tiroir discret."
+        )
+        rooms['piece_cachee'].inventory['lettre de chantage'] = Item('lettre de chantage', 'une lettre menaçante, écrite à la main', 0.05,
+            detail="La lettre mentionne une dette et le nom 'Delcourt' dans une phrase partiellement effacée."
         )
 
-        # Ajouter les personnages non joueurs dans les pièces
-        rooms['salon_victorien'].characters['Gandalf'] = Character(
-            'Gandalf',
-            'un magicien blanc',
-            rooms['salon_victorien'],
-            ['Bienvenue, voyageur!', 'Que peux-je faire pour toi?']
+        # Cave à vin
+        rooms['cave_a_vin'].inventory['bouteille brisée'] = Item('bouteille brisée', 'des éclats de bouteille et du vin renversé', 0.2)
+        rooms['cave_a_vin'].inventory['traces effacées'] = Item('traces effacées', "des marques nettoyées, comme si on avait tenté d'effacer des indices", 0.0)
+        rooms['cave_a_vin'].inventory['tonneau déplacé'] = Item('tonneau déplacé', 'un tonneau déplacé laissant un espace vide', 20.0)
+
+        # Atelier
+        # Indices importants
+        rooms['atelier'].inventory['gants tachés de sang'] = Item(
+            'gants tachés de sang', "une paire de gants tachés de sang, indice potentiel", 0.1,
+            detail="De petites éclaboussures et des fibres noircies indiquent une lutte; des traces de saleté sont incrustées, peut-être transférées récemment."
         )
-        rooms['bibliotheque'].characters['Archiviste'] = Character(
-            'Archiviste',
-            'un vieux savant aux yeux scrutateurs',
+        rooms['atelier'].inventory['plans froissés'] = Item('plans froissés', 'des plans froissés couverts de notes et de ratures', 0.2,
+            detail="On distingue des annotations techniques et une mention barrée : 'Ne pas laisser Armand lire'."
+        )
+        rooms['atelier'].inventory['outils lourds'] = Item('outils lourds', "une caisse d'outils lourds", 15.0)
+
+        # Ajouter les personnages non joueurs dans les pièces
+        rooms['jardin_hiver'].characters['Émile'] = Character(
+            'Émile',
+            "le jardinier taciturne qui connaît les passages secrets",
+            rooms['jardin_hiver'],
+            ["Je préfère rester discret... Ces passages cachés, peu les connaissent."]
+        )
+        rooms['cuisine'].characters['Clara Beaumont'] = Character(
+            'Clara Beaumont',
+            "la lectrice mystérieuse, invitée cultivée, toujours un livre à la main (était dans la cuisine lors du drame)",
+            rooms['cuisine'],
+            ["Les livres disent parfois plus que les gens. J'étais dans la cuisine cette nuit-là."]
+        )
+        rooms['atelier'].characters['Victor Lenoir'] = Character(
+            'Victor Lenoir',
+            "l'ingénieur, passe son temps à l'atelier; sait manipuler des mécanismes complexes",
+            rooms['atelier'],
+            ["Les mécanismes peuvent être trompeurs. Je conçois des dispositifs, pas des crimes."]
+        )
+        rooms['salon_victorien'].characters['Hélène de Valenbourg'] = Character(
+            'Hélène de Valenbourg',
+            "l'épouse, froide et distante (possède une arme à feu)",
+            rooms['salon_victorien'],
+            ["Je suis encore sous le choc. Armand avait beaucoup d'ennemis... Je n'ai rien à cacher."]
+        )
+        rooms['bibliotheque'].characters['Maurice Delcourt'] = Character(
+            'Maurice Delcourt',
+            "l'archiviste, obsédé par les livres anciens; fréquente la bibliothèque",
             rooms['bibliotheque'],
-            ['Les livres contiennent tous les secrets...', 'Cherches-tu quelque chose?']
+            ["Les vieux manuscrits ont des secrets que certains paieraient cher pour découvrir."]
         )
 
         # Create exits for rooms
@@ -403,19 +465,21 @@ class Game:
             'U': None,
             'D': None,
         }
+        # L'accès est initialement verrouillé vers la pièce cachée (s'ouvrira en prenant un livre particulier)
         rooms['bibliotheque'].exits = {
             'N': None,
-            'E': rooms['piece_cachee'],
+            'E': None,  # verrouillé jusqu'à activation
             'S': None,
             'O': rooms['couloir'],
             'U': None,
             'D': None,
         }
+        # Pièce cachée isolée initialement (sortie O verrouillée)
         rooms['piece_cachee'].exits = {
             'N': None,
             'E': None,
             'S': None,
-            'O': rooms['bibliotheque'],
+            'O': None,  # verrouillé jusqu'à activation depuis la bibliothèque
             'U': None,
             'D': None,
         }
@@ -470,6 +534,13 @@ class Game:
         """Show a short welcome and the current room description."""
         print(f"\nBienvenue {self.player.name} dans ce jeu d'aventure !")
         print("Entrez 'help' si vous avez besoin d'aide.")
+        # Contexte introductif ajouté: mystère du manoir
+        print(
+            "Le manoir d’Hiver accueille plusieurs invités pour une soirée privée.\n"
+            "Au petit matin, le maître des lieux est retrouvé mort dans son bureau, une flaque de sang autour de lui.\n"
+            "Les portes étaient verrouillées. Le meurtrier est forcément dans la maison.\n"
+            "La victime ? Armand de Valenbourg, propriétaire du manoir, homme riche et secret, détenteur de documents compromettants.\n"
+        )
         print(self.player.current_room.get_long_description())
 
     def tick_npcs(self):

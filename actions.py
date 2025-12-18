@@ -137,6 +137,83 @@ class Actions:
         return current.look()
 
     @staticmethod
+    def inspect(game, list_of_words, number_of_parameters):
+        """Examiner un objet en détail. Nécessite une loupe pour voir les détails.
+
+        Forme attendue: `inspect <objet>`
+        """
+        if len(list_of_words) < number_of_parameters + 1:
+            command_word = list_of_words[0]
+            print(MSG1.format(command_word=command_word))
+            return False
+
+        player = game.player
+        current = getattr(player, 'current_room', None)
+        if current is None:
+            print("\nVous n'êtes dans aucune pièce.\n")
+            return False
+
+        target_name = " ".join(list_of_words[1:]).strip()
+        if not target_name:
+            command_word = list_of_words[0]
+            print(MSG1.format(command_word=command_word))
+            return False
+
+        # Recherche robuste dans inventaire joueur puis pièce
+        found = None
+        found_source = None
+        tn = target_name.lower()
+
+        def search(collection):
+            for k, v in collection.items():
+                if k == target_name or k.lower() == tn or k.lower().startswith(tn) or tn in k.lower():
+                    return (k, v)
+            return None
+
+        res = search(player.inventory)
+        if res:
+            found_source = 'inventory'
+            found = res[1]
+            found_key = res[0]
+        else:
+            res = search(current.inventory)
+            if res:
+                found_source = 'room'
+                found = res[1]
+                found_key = res[0]
+
+        if not found:
+            # Indiquer les items disponibles pour aider le joueur
+            candidates = list(current.inventory.keys())
+            inv = list(player.inventory.keys())
+            msg = "\nAucun objet correspondant trouvé."
+            if candidates:
+                msg += " Objets visibles: " + ", ".join(candidates)
+            if inv:
+                msg += " | Dans l'inventaire: " + ", ".join(inv)
+            msg += "\n"
+            print(msg)
+            return False
+
+        # Afficher la description de base
+        print(f"\n{found.describe()}\n")
+
+        # Vérifier si le joueur possède la loupe
+        has_loupe = 'loupe' in player.inventory
+        if not has_loupe:
+            print("Vous pourriez obtenir plus d'informations avec une loupe.\n")
+            return True
+
+        # Avec la loupe, afficher le détail si présent
+        detail = getattr(found, 'detail', None)
+        if detail:
+            print(detail + "\n")
+        else:
+            print("La loupe n'apporte pas d'information supplémentaire sur cet objet.\n")
+
+        return True
+
+    @staticmethod
     def talk(game, list_of_words, number_of_parameters):
         """Parler à un personnage non joueur présent dans la pièce.
 
@@ -312,6 +389,21 @@ class Actions:
             w_display = ""
 
         print(f"\nVous avez pris '{item_name}'{w_display} et l'avez mis dans votre inventaire.\n")
+
+        # Effet spécial : prendre un livre étrange peut révéler une pièce secrète
+        try:
+            nm = item_name.lower()
+            if 'livre' in nm and 'reliure' in nm and ('étrange' in nm or 'etrange' in nm):
+                # Trouver la pièce secrète et ouvrir l'accès Est/Ouest
+                secret = next((r for r in game.rooms if 'pièce' in r.name.lower() and 'cach' in r.name.lower()), None)
+                if secret is not None:
+                    # Ouvrir la porte depuis la bibliothèque
+                    current.exits['E'] = secret
+                    secret.exits['O'] = current
+                    print("\nEn retirant le livre, un mécanisme se déclenche : une porte s'ouvre vers une pièce secrète à l'est.\n")
+        except Exception:
+            pass
+
         return True
 
     @staticmethod

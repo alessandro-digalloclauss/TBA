@@ -13,10 +13,12 @@ class Item:
     - weight: poids (en kg)
     """
 
-    def __init__(self, name: str, description: str, weight: float):
+    def __init__(self, name: str, description: str, weight: float, detail: str = None):
         self.name = name
         self.description = description
         self.weight = weight
+        # detail: description plus précise visible uniquement avec un outil d'inspection (loupe)
+        self.detail = detail
 
     def __str__(self) -> str:
         """Retourne une représentation textuelle lisible de l'objet.
