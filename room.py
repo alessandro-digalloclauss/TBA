@@ -36,6 +36,9 @@ class Room:
         # characters : dictionnaire des personnages non joueurs présents (name -> Character)
         # Initialisé vide ; rempli depuis `Game.setup()`.
         self.characters = {}
+        # sprite_positions : dictionnaire des positions (x, y) pour chaque entité (objet ou PNJ)
+        # Exemple: {"cle": (400, 500), "Émile": (250, 300)}
+        self.sprite_positions = {}
 
     def get_exit(self, direction):
         """Retourne la pièce dans la direction donnée ou None si absente."""

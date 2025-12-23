@@ -13,12 +13,14 @@ class Item:
     - weight: poids (en kg)
     """
 
-    def __init__(self, name: str, description: str, weight: float, detail: str = None):
+    def __init__(self, name: str, description: str, weight: float, detail: str = None, image: str = None):
         self.name = name
         self.description = description
         self.weight = weight
         # detail: description plus précise visible uniquement avec un outil d'inspection (loupe)
         self.detail = detail
+        # image: nom de fichier du sprite de l'objet (dans assets/)
+        self.image = image
 
     def __str__(self) -> str:
         """Retourne une représentation textuelle lisible de l'objet.

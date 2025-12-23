@@ -10,11 +10,13 @@ class Character:
     - msgs: liste de messages affichés quand le joueur interroge le personnage
     """
 
-    def __init__(self, name, description, current_room=None, msgs=None):
+    def __init__(self, name, description, current_room=None, msgs=None, image=None):
         self.name = name
         self.description = description
         self.current_room = current_room
         self.msgs = msgs or []
+        # Image du sprite du personnage (nom de fichier dans assets/)
+        self.image = image
         # Nombre de tours pendant lesquels le PNJ doit rester sur place
         # (décrémente à chaque appel à move()).
         self.stay_turns = 0

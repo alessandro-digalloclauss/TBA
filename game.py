@@ -18,6 +18,13 @@ try:
 except Exception:
     tk = None
 
+# Optional: import PIL for image resizing. If unavailable, images won't be scaled.
+try:
+    from PIL import Image, ImageTk
+    PIL_AVAILABLE = True
+except ImportError:
+    PIL_AVAILABLE = False
+
 from room import Room
 from player import Player
 from command import Command
@@ -285,6 +292,32 @@ class Game:
         # Collecter les pièces dans la liste du jeu
         self.rooms = list(rooms.values())
 
+        # Configuration des images de fond pour chaque pièce
+        rooms['hall'].image = 'bg_hall.png'
+        rooms['jardin_hiver'].image = 'bg_jardin.png'
+        rooms['salon_victorien'].image = 'bg_salon.png'
+        rooms['cuisine'].image = 'bg_cuisine.png'
+        rooms['bureau'].image = 'bg_bureau.png'
+        rooms['couloir'].image = 'bg_couloir.png'
+        rooms['chambre'].image = 'bg_chambre.png'
+        rooms['bibliotheque'].image = 'bg_bibliotheque.png'
+        rooms['piece_cachee'].image = 'bg_piece_cachee.png'
+        rooms['cave_a_vin'].image = 'bg_cave.png'
+        rooms['atelier'].image = 'bg_atelier.png'
+
+        # Configuration des positions des sprites pour le Hall (exemple de test)
+        rooms['hall'].sprite_positions = {
+            'cle': (100, 250),
+            'manteau': (300, 200),
+        }
+
+        # Configuration des positions des sprites pour le Jardin d'hiver (exemple de test)
+        rooms['jardin_hiver'].sprite_positions = {
+            'plantes renversées': (150, 220),
+            'gants de jardinage propres': (280, 180),
+            'Émile': (80, 150),  # Position du personnage Émile
+        }
+
         # Ajout d'items dans certaines pièces (nom -> Item)
         # Jardin d'hiver
         rooms['jardin_hiver'].inventory['plantes renversées'] = Item(
@@ -296,8 +329,8 @@ class Game:
         )
 
         # Hall
-        rooms['hall'].inventory['cle'] = Item('cle', 'une petite clé rouillée', 0.5)
-        rooms['hall'].inventory['manteau'] = Item('manteau', "un manteau élégant, peut-être appartenant à un invité", 1.5)
+        rooms['hall'].inventory['cle'] = Item('cle', 'une petite clé rouillée', 0.5, image='item_cle.png')
+        rooms['hall'].inventory['manteau'] = Item('manteau', "un manteau élégant, peut-être appartenant à un invité", 1.5, image='item_manteau.png')
 
         # Cuisine
         rooms['cuisine'].inventory['couteau'] = Item('couteau', 'un couteau émoussé', 0.5)
@@ -365,31 +398,36 @@ class Game:
             'Émile',
             "le jardinier taciturne qui connaît les passages secrets",
             rooms['jardin_hiver'],
-            ["Je préfère rester discret... Ces passages cachés, peu les connaissent."]
+            ["Je préfère rester discret... Ces passages cachés, peu les connaissent."],
+            image='npc_emile.png'  # Sprite du personnage Émile
         )
         rooms['cuisine'].characters['Clara Beaumont'] = Character(
             'Clara Beaumont',
             "la lectrice mystérieuse, invitée cultivée, toujours un livre à la main (était dans la cuisine lors du drame)",
             rooms['cuisine'],
-            ["Les livres disent parfois plus que les gens. J'étais dans la cuisine cette nuit-là."]
+            ["Les livres disent parfois plus que les gens. J'étais dans la cuisine cette nuit-là."],
+            image='npc_clara.png'  # Sprite du personnage Clara
         )
         rooms['atelier'].characters['Victor Lenoir'] = Character(
             'Victor Lenoir',
             "l'ingénieur, passe son temps à l'atelier; sait manipuler des mécanismes complexes",
             rooms['atelier'],
-            ["Les mécanismes peuvent être trompeurs. Je conçois des dispositifs, pas des crimes."]
+            ["Les mécanismes peuvent être trompeurs. Je conçois des dispositifs, pas des crimes."],
+            image='npc_victor.png'  # Sprite du personnage Victor
         )
         rooms['salon_victorien'].characters['Hélène de Valenbourg'] = Character(
             'Hélène de Valenbourg',
             "l'épouse, froide et distante (possède une arme à feu)",
             rooms['salon_victorien'],
-            ["Je suis encore sous le choc. Armand avait beaucoup d'ennemis... Je n'ai rien à cacher."]
+            ["Je suis encore sous le choc. Armand avait beaucoup d'ennemis... Je n'ai rien à cacher."],
+            image='npc_helene.png'  # Sprite du personnage Hélène
         )
         rooms['bibliotheque'].characters['Maurice Delcourt'] = Character(
             'Maurice Delcourt',
             "l'archiviste, obsédé par les livres anciens; fréquente la bibliothèque",
             rooms['bibliotheque'],
-            ["Les vieux manuscrits ont des secrets que certains paieraient cher pour découvrir."]
+            ["Les vieux manuscrits ont des secrets que certains paieraient cher pour découvrir."],
+            image='npc_maurice.png'  # Sprite du personnage Maurice
         )
 
         # Create exits for rooms
@@ -595,9 +633,9 @@ class _StdoutRedirector:
 class GameGUI(tk.Tk):
     """Tkinter GUI for the text-based adventure game.
 
-    Layout:
+    Layout - Style Cluedo Victorien:
     ┌─────────────────────────────────────────────────────────────┐
-    │  [Image 400x300]     │  [Info Panel: Lieu, Objets, PNJ]    │
+    │  [Image 800x450]     │  [Info Panel compact]               │
     ├─────────────────────────────────────────────────────────────┤
     │  [Terminal Output - Scrollable]    │  [Boutons Actions]    │
     ├─────────────────────────────────────────────────────────────┤
@@ -605,23 +643,46 @@ class GameGUI(tk.Tk):
     └─────────────────────────────────────────────────────────────┘
     """
 
-    IMAGE_WIDTH = 400
-    IMAGE_HEIGHT = 300
+    IMAGE_WIDTH = 800
+    IMAGE_HEIGHT = 450
+    
+    # Palette de couleurs victoriennes Cluedo
+    COLORS = {
+        'bg_dark': '#1a0f0f',           # Brun très foncé (fond principal)
+        'bg_medium': '#2d1f1f',         # Brun moyen
+        'bg_light': '#3d2b2b',          # Brun clair
+        'accent_gold': '#c9a227',       # Or victorien
+        'accent_burgundy': '#722f37',   # Bordeaux
+        'accent_burgundy_light': '#8b3a3a',  # Bordeaux clair
+        'text_cream': '#f5e6d3',        # Crème/ivoire
+        'text_gold': '#d4af37',         # Or pour titres
+        'text_muted': '#a89080',        # Texte secondaire
+        'terminal_bg': '#0d0907',       # Fond terminal (presque noir)
+        'terminal_fg': '#c9a227',       # Texte terminal (or)
+        'highlight': '#8b0000',         # Rouge foncé pour sélection
+    }
 
     def __init__(self):
         super().__init__()
-        self.title("TBA - Aventure Textuelle")
-        self.geometry("1100x750")  # Plus large pour tout afficher
-        self.minsize(1000, 700)
+        self.title("🔍 Mystère au Manoir - Enquête Victorienne")
+        self.geometry("1400x900")
+        self.minsize(1300, 850)
+        self.configure(bg=self.COLORS['bg_dark'])
 
         # Underlying game logic instance
         self.game = Game()
 
+        # Cache d'images pour éviter le garbage collection et améliorer les performances
+        self.image_cache = {}
+        
+        # Configurer le style ttk pour le thème victorien
+        self._setup_victorian_style()
+
         # Ask player name via dialog (fallback to 'Joueur')
-        name = simpledialog.askstring("Nom", "Entrez votre nom:", parent=self)
+        name = simpledialog.askstring("Identité", "Quel est votre nom, détective ?", parent=self)
         if not name:
-            name = "Joueur"
-        self.game.setup(player_name=name)  # Pass name to avoid double prompt
+            name = "Détective"
+        self.game.setup(player_name=name)
 
         # Build UI layers
         self._build_layout()
@@ -639,9 +700,46 @@ class GameGUI(tk.Tk):
         # Handle window close
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
+    def _setup_victorian_style(self):
+        """Configure le style ttk pour un thème victorien."""
+        style = ttk.Style()
+        style.theme_use('clam')
+        
+        # Style général
+        style.configure('.',
+                       background=self.COLORS['bg_dark'],
+                       foreground=self.COLORS['text_cream'],
+                       font=('Georgia', 10))
+        
+        # Frames
+        style.configure('TFrame', background=self.COLORS['bg_dark'])
+        
+        # LabelFrames avec bordure dorée
+        style.configure('TLabelframe',
+                       background=self.COLORS['bg_dark'],
+                       bordercolor=self.COLORS['accent_gold'],
+                       relief='ridge',
+                       borderwidth=2)
+        style.configure('TLabelframe.Label',
+                       background=self.COLORS['bg_dark'],
+                       foreground=self.COLORS['text_gold'],
+                       font=('Georgia', 10, 'bold'))
+        
+        # Scrollbar
+        style.configure('TScrollbar',
+                       background=self.COLORS['bg_medium'],
+                       troughcolor=self.COLORS['bg_dark'],
+                       arrowcolor=self.COLORS['accent_gold'])
+        
+        # Entry
+        style.configure('TEntry',
+                       fieldbackground=self.COLORS['bg_medium'],
+                       foreground=self.COLORS['text_cream'],
+                       insertcolor=self.COLORS['accent_gold'])
+
     # -------- Layout construction --------
     def _build_layout(self):
-        """Construire l'interface avec tous les panneaux."""
+        """Construire l'interface avec tous les panneaux - Style Victorien."""
         # Configure root grid: 3 rows, 2 columns
         self.grid_rowconfigure(0, weight=0)  # Top: Image + Info
         self.grid_rowconfigure(1, weight=1)  # Middle: Terminal + Actions
@@ -664,8 +762,8 @@ class GameGUI(tk.Tk):
         top_frame.grid_columnconfigure(0, weight=0)
         top_frame.grid_columnconfigure(1, weight=1)
 
-        # Image area (left)
-        image_frame = ttk.LabelFrame(top_frame, text="🗺️ Lieu")
+        # Image area (left) - Style parchemin victorien
+        image_frame = ttk.LabelFrame(top_frame, text="⚜ Scène du Crime ⚜")
         image_frame.grid(row=0, column=0, sticky="nw", padx=(0, 6))
         
         canvas_container = ttk.Frame(image_frame, width=self.IMAGE_WIDTH, height=self.IMAGE_HEIGHT)
@@ -675,41 +773,58 @@ class GameGUI(tk.Tk):
         self.canvas = tk.Canvas(canvas_container,
                                 width=self.IMAGE_WIDTH,
                                 height=self.IMAGE_HEIGHT,
-                                bg="#1a1a2e")
+                                bg=self.COLORS['bg_dark'],
+                                highlightbackground=self.COLORS['accent_gold'],
+                                highlightthickness=2)
         self.canvas.pack(fill="both", expand=True)
         self._image_ref = None
 
-        # Room info panel (right of image)
-        info_frame = ttk.Frame(top_frame)
+        # Room info panel (right of image) - compact, style victorien
+        info_frame = ttk.Frame(top_frame, width=280)
         info_frame.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
+        info_frame.grid_propagate(False)
         info_frame.grid_rowconfigure(0, weight=0)
         info_frame.grid_rowconfigure(1, weight=1)
         info_frame.grid_rowconfigure(2, weight=1)
         info_frame.grid_columnconfigure(0, weight=1)
 
         # Room name and description
-        room_frame = ttk.LabelFrame(info_frame, text="📍 Lieu actuel")
+        room_frame = ttk.LabelFrame(info_frame, text="⚜ Lieu d'Investigation ⚜")
         room_frame.grid(row=0, column=0, sticky="ew", pady=(0, 4))
-        self.room_label = tk.Label(room_frame, text="", font=("Helvetica", 12, "bold"),
-                                   bg="#1a1a2e", fg="#eee", anchor="w", wraplength=350)
+        self.room_label = tk.Label(room_frame, text="", font=("Georgia", 11, "bold"),
+                                   bg=self.COLORS['bg_medium'], fg=self.COLORS['text_gold'], 
+                                   anchor="w", wraplength=250)
         self.room_label.pack(fill="x", padx=5, pady=3)
-        self.exits_label = tk.Label(room_frame, text="", font=("Helvetica", 10),
-                                    bg="#16213e", fg="#aaa", anchor="w")
+        self.exits_label = tk.Label(room_frame, text="", font=("Georgia", 9),
+                                    bg=self.COLORS['bg_light'], fg=self.COLORS['text_muted'], 
+                                    anchor="w", wraplength=250)
         self.exits_label.pack(fill="x", padx=5, pady=(0, 3))
 
-        # Objects in room
-        objects_frame = ttk.LabelFrame(info_frame, text="📦 Objets dans la pièce")
+        # Objects in room - style indices
+        objects_frame = ttk.LabelFrame(info_frame, text="🔍 Indices & Objets")
         objects_frame.grid(row=1, column=0, sticky="nsew", pady=4)
-        self.objects_listbox = tk.Listbox(objects_frame, height=4, bg="#16213e", fg="#eee",
-                                          selectbackground="#e94560", font=("Helvetica", 10))
+        self.objects_listbox = tk.Listbox(objects_frame, height=3, 
+                                          bg=self.COLORS['bg_medium'], 
+                                          fg=self.COLORS['text_cream'],
+                                          selectbackground=self.COLORS['highlight'],
+                                          selectforeground=self.COLORS['text_gold'],
+                                          font=("Georgia", 9),
+                                          highlightbackground=self.COLORS['accent_gold'],
+                                          highlightthickness=1)
         self.objects_listbox.pack(fill="both", expand=True, padx=5, pady=5)
         self.objects_listbox.bind("<Double-1>", lambda e: self._take_selected())
 
-        # Characters in room
-        chars_frame = ttk.LabelFrame(info_frame, text="👥 Personnages présents")
+        # Characters in room - style suspects
+        chars_frame = ttk.LabelFrame(info_frame, text="🎭 Suspects Présents")
         chars_frame.grid(row=2, column=0, sticky="nsew", pady=4)
-        self.chars_listbox = tk.Listbox(chars_frame, height=3, bg="#16213e", fg="#eee",
-                                        selectbackground="#e94560", font=("Helvetica", 10))
+        self.chars_listbox = tk.Listbox(chars_frame, height=2, 
+                                        bg=self.COLORS['bg_medium'], 
+                                        fg=self.COLORS['text_cream'],
+                                        selectbackground=self.COLORS['highlight'],
+                                        selectforeground=self.COLORS['text_gold'],
+                                        font=("Georgia", 9),
+                                        highlightbackground=self.COLORS['accent_gold'],
+                                        highlightthickness=1)
         self.chars_listbox.pack(fill="both", expand=True, padx=5, pady=5)
         self.chars_listbox.bind("<Double-1>", lambda e: self._talk_selected())
 
@@ -720,8 +835,8 @@ class GameGUI(tk.Tk):
         middle_frame.grid_columnconfigure(1, weight=0)
         middle_frame.grid_rowconfigure(0, weight=1)
 
-        # Terminal output (left)
-        terminal_frame = ttk.LabelFrame(middle_frame, text="📜 Terminal")
+        # Terminal output (left) - Style carnet d'enquête
+        terminal_frame = ttk.LabelFrame(middle_frame, text="📜 Carnet d'Enquête")
         terminal_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
         terminal_frame.grid_rowconfigure(0, weight=1)
         terminal_frame.grid_columnconfigure(0, weight=1)
@@ -731,18 +846,33 @@ class GameGUI(tk.Tk):
                                    wrap="word",
                                    yscrollcommand=scrollbar.set,
                                    state="disabled",
-                                   bg="#0f0f23", fg="#00ff00",
-                                   font=("Courier", 11),
-                                   height=12)
+                                   bg=self.COLORS['terminal_bg'],
+                                   fg=self.COLORS['terminal_fg'],
+                                   font=("Georgia", 11),
+                                   height=12,
+                                   insertbackground=self.COLORS['accent_gold'],
+                                   highlightbackground=self.COLORS['accent_gold'],
+                                   highlightthickness=1)
         scrollbar.config(command=self.text_output.yview)
         self.text_output.grid(row=0, column=0, sticky="nsew", padx=(5, 0), pady=5)
         scrollbar.grid(row=0, column=1, sticky="ns", padx=(0, 5), pady=5)
 
-        # Actions panel (right)
+        # Actions panel (right) - Style victorien
         actions_panel = ttk.Frame(middle_frame)
         actions_panel.grid(row=0, column=1, sticky="ns")
 
-        btn_style = {"width": 12, "pady": 2, "font": ("Helvetica", 9)}
+        # Style de boutons victoriens
+        btn_style = {
+            "width": 12, 
+            "pady": 2, 
+            "font": ("Georgia", 9),
+            "bg": self.COLORS['accent_burgundy'],
+            "fg": self.COLORS['text_cream'],
+            "activebackground": self.COLORS['accent_burgundy_light'],
+            "activeforeground": self.COLORS['text_gold'],
+            "relief": "raised",
+            "bd": 2
+        }
 
         # Help button
         tk.Button(actions_panel,
@@ -751,59 +881,84 @@ class GameGUI(tk.Tk):
                   command=lambda: self._send_command("help"),
                   **btn_style if self._btn_help is None else {"bd": 0}).grid(row=0, column=0, sticky="ew", pady=2)
 
-        # Movement buttons
+        # Movement buttons - Style boussole victorienne
         move_frame = ttk.LabelFrame(actions_panel, text="🧭 Déplacements")
         move_frame.grid(row=1, column=0, sticky="ew", pady=4)
         
-        tk.Button(move_frame, text="⬆ Haut", command=lambda: self._send_command("go U"),
-                  width=8).grid(row=0, column=0, columnspan=3, sticky="ew")
+        move_btn_style = {
+            "bg": self.COLORS['bg_medium'],
+            "fg": self.COLORS['text_gold'],
+            "activebackground": self.COLORS['accent_burgundy'],
+            "activeforeground": self.COLORS['text_cream'],
+            "font": ("Georgia", 8),
+            "relief": "ridge",
+            "bd": 1
+        }
+        
+        tk.Button(move_frame, text="↑ Étage", command=lambda: self._send_command("go U"),
+                  width=8, **move_btn_style).grid(row=0, column=0, columnspan=3, sticky="ew")
         tk.Button(move_frame, image=self._btn_up if self._btn_up else None,
                   text="N" if not self._btn_up else "",
-                  command=lambda: self._send_command("go N"), bd=0).grid(row=1, column=1)
+                  command=lambda: self._send_command("go N"), bd=0, 
+                  bg=self.COLORS['bg_dark']).grid(row=1, column=1)
         tk.Button(move_frame, image=self._btn_left if self._btn_left else None,
                   text="O" if not self._btn_left else "",
-                  command=lambda: self._send_command("go O"), bd=0).grid(row=2, column=0)
+                  command=lambda: self._send_command("go O"), bd=0,
+                  bg=self.COLORS['bg_dark']).grid(row=2, column=0)
         tk.Button(move_frame, image=self._btn_right if self._btn_right else None,
                   text="E" if not self._btn_right else "",
-                  command=lambda: self._send_command("go E"), bd=0).grid(row=2, column=2)
+                  command=lambda: self._send_command("go E"), bd=0,
+                  bg=self.COLORS['bg_dark']).grid(row=2, column=2)
         tk.Button(move_frame, image=self._btn_down if self._btn_down else None,
                   text="S" if not self._btn_down else "",
-                  command=lambda: self._send_command("go S"), bd=0).grid(row=3, column=1)
-        tk.Button(move_frame, text="⬇ Bas", command=lambda: self._send_command("go D"),
-                  width=8).grid(row=4, column=0, columnspan=3, sticky="ew")
+                  command=lambda: self._send_command("go S"), bd=0,
+                  bg=self.COLORS['bg_dark']).grid(row=3, column=1)
+        tk.Button(move_frame, text="↓ Cave", command=lambda: self._send_command("go D"),
+                  width=8, **move_btn_style).grid(row=4, column=0, columnspan=3, sticky="ew")
         tk.Button(move_frame, text="↩ Retour", command=lambda: self._send_command("back"),
-                  width=8).grid(row=5, column=0, columnspan=3, sticky="ew", pady=(4, 0))
+                  width=8, **move_btn_style).grid(row=5, column=0, columnspan=3, sticky="ew", pady=(4, 0))
 
-        # Actions buttons
-        act_frame = ttk.LabelFrame(actions_panel, text="⚡ Actions")
+        # Actions buttons - Style enquête
+        act_frame = ttk.LabelFrame(actions_panel, text="🔍 Investigation")
         act_frame.grid(row=2, column=0, sticky="ew", pady=4)
         
-        tk.Button(act_frame, text="👁 Regarder", command=lambda: self._send_command("look"),
+        tk.Button(act_frame, text="👁 Observer", command=lambda: self._send_command("look"),
                   **btn_style).grid(row=0, column=0, sticky="ew", pady=1)
-        tk.Button(act_frame, text="📜 Historique", command=lambda: self._send_command("history"),
+        tk.Button(act_frame, text="📜 Mémoire", command=lambda: self._send_command("history"),
                   **btn_style).grid(row=1, column=0, sticky="ew", pady=1)
-        tk.Button(act_frame, text="✋ Prendre", command=self._prompt_take,
+        tk.Button(act_frame, text="✋ Saisir", command=self._prompt_take,
                   **btn_style).grid(row=2, column=0, sticky="ew", pady=1)
         tk.Button(act_frame, text="📦 Déposer", command=self._prompt_drop,
                   **btn_style).grid(row=3, column=0, sticky="ew", pady=1)
-        tk.Button(act_frame, text="💬 Parler", command=self._prompt_talk,
+        tk.Button(act_frame, text="💬 Interroger", command=self._prompt_talk,
                   **btn_style).grid(row=4, column=0, sticky="ew", pady=1)
 
-        # Quests buttons
-        quest_frame = ttk.LabelFrame(actions_panel, text="📋 Quêtes")
+        # Quests buttons - Style missions
+        quest_frame = ttk.LabelFrame(actions_panel, text="📋 Missions")
         quest_frame.grid(row=3, column=0, sticky="ew", pady=4)
         
-        tk.Button(quest_frame, text="📋 Voir quêtes", command=lambda: self._send_command("quests"),
+        tk.Button(quest_frame, text="📋 Objectifs", command=lambda: self._send_command("quests"),
                   **btn_style).grid(row=0, column=0, sticky="ew", pady=1)
-        tk.Button(quest_frame, text="🏆 Récompenses", command=lambda: self._send_command("rewards"),
+        tk.Button(quest_frame, text="🏆 Découvertes", command=lambda: self._send_command("rewards"),
                   **btn_style).grid(row=1, column=0, sticky="ew", pady=1)
 
         # Quit button
+        quit_btn_style = {
+            "bg": self.COLORS['highlight'],
+            "fg": self.COLORS['text_cream'],
+            "activebackground": "#5a0000",
+            "activeforeground": self.COLORS['text_gold'],
+            "font": ("Georgia", 9, "bold"),
+            "relief": "raised",
+            "bd": 2,
+            "width": 12,
+            "pady": 2
+        }
         tk.Button(actions_panel,
                   image=self._btn_quit if self._btn_quit else None,
                   text="🚪 Quitter" if self._btn_quit is None else "",
                   command=lambda: self._send_command("quit"),
-                  **btn_style if self._btn_quit is None else {"bd": 0}).grid(row=4, column=0, sticky="ew", pady=(8, 2))
+                  **quit_btn_style if self._btn_quit is None else {"bd": 0}).grid(row=4, column=0, sticky="ew", pady=(8, 2))
 
         # ============ ROW 2: BOTTOM - Inventory + Entry ============
         bottom_frame = ttk.Frame(self)
@@ -811,17 +966,23 @@ class GameGUI(tk.Tk):
         bottom_frame.grid_columnconfigure(0, weight=1)
         bottom_frame.grid_columnconfigure(1, weight=2)
 
-        # Inventory panel (left)
-        inv_frame = ttk.LabelFrame(bottom_frame, text="🎒 Inventaire")
+        # Inventory panel (left) - Style sacoche de détective
+        inv_frame = ttk.LabelFrame(bottom_frame, text="🎒 Sacoche du Détective")
         inv_frame.grid(row=0, column=0, sticky="ew", padx=(0, 6))
         
-        self.inventory_listbox = tk.Listbox(inv_frame, height=3, bg="#16213e", fg="#eee",
-                                            selectbackground="#e94560", font=("Helvetica", 10))
+        self.inventory_listbox = tk.Listbox(inv_frame, height=3, 
+                                            bg=self.COLORS['bg_medium'], 
+                                            fg=self.COLORS['text_cream'],
+                                            selectbackground=self.COLORS['highlight'],
+                                            selectforeground=self.COLORS['text_gold'],
+                                            font=("Georgia", 10),
+                                            highlightbackground=self.COLORS['accent_gold'],
+                                            highlightthickness=1)
         self.inventory_listbox.pack(fill="x", padx=5, pady=5)
         self.inventory_listbox.bind("<Double-1>", lambda e: self._drop_selected())
 
-        # Command entry (right)
-        entry_frame = ttk.LabelFrame(bottom_frame, text="⌨️ Commande")
+        # Command entry (right) - Style télégramme victorien
+        entry_frame = ttk.LabelFrame(bottom_frame, text="✒️ Ordres du Détective")
         entry_frame.grid(row=0, column=1, sticky="ew")
         entry_frame.grid_columnconfigure(0, weight=1)
 
@@ -830,13 +991,26 @@ class GameGUI(tk.Tk):
         entry_container.grid_columnconfigure(0, weight=1)
 
         self.entry_var = tk.StringVar()
-        self.entry = ttk.Entry(entry_container, textvariable=self.entry_var, font=("Courier", 11))
+        self.entry = tk.Entry(entry_container, 
+                              textvariable=self.entry_var, 
+                              font=("Georgia", 11),
+                              bg=self.COLORS['bg_medium'],
+                              fg=self.COLORS['text_cream'],
+                              insertbackground=self.COLORS['accent_gold'],
+                              highlightbackground=self.COLORS['accent_gold'],
+                              highlightthickness=1)
         self.entry.grid(row=0, column=0, sticky="ew", padx=(0, 5))
         self.entry.bind("<Return>", self._on_enter)
         self.entry.focus_set()
 
-        send_btn = tk.Button(entry_container, text="Envoyer", command=self._on_enter,
-                             bg="#e94560", fg="white", font=("Helvetica", 10, "bold"))
+        send_btn = tk.Button(entry_container, text="Exécuter", command=self._on_enter,
+                             bg=self.COLORS['accent_burgundy'], 
+                             fg=self.COLORS['text_cream'],
+                             activebackground=self.COLORS['accent_burgundy_light'],
+                             activeforeground=self.COLORS['text_gold'],
+                             font=("Georgia", 10, "bold"),
+                             relief="raised",
+                             bd=2)
         send_btn.grid(row=0, column=1)
 
 
@@ -888,40 +1062,145 @@ class GameGUI(tk.Tk):
                 self.inventory_listbox.insert(tk.END, f"  {item_name} ({item.weight} kg)")
 
     # -------- Image update --------
+    def _load_image(self, image_path, resize_to=None, fill=True):
+        """Charge une image depuis le cache ou depuis le fichier.
+        
+        Utilise un cache pour éviter de recharger les images et prévenir
+        le garbage collection des PhotoImage par Python.
+        
+        Args:
+            image_path: Chemin vers l'image
+            resize_to: Tuple (width, height) pour redimensionner l'image
+            fill: Si True, remplit tout le cadre (peut couper l'image). Si False, conserve les proportions.
+        """
+        # Créer une clé de cache unique incluant la taille et le mode
+        cache_key = f"{image_path}_{resize_to}_{fill}" if resize_to else str(image_path)
+        
+        if cache_key not in self.image_cache:
+            try:
+                if PIL_AVAILABLE and resize_to:
+                    # Utiliser PIL pour redimensionner l'image
+                    pil_image = Image.open(image_path)
+                    
+                    if fill:
+                        # Mode FILL: redimensionner pour couvrir tout le cadre (crop si nécessaire)
+                        target_w, target_h = resize_to
+                        img_w, img_h = pil_image.size
+                        
+                        # Calculer le ratio pour couvrir tout le cadre
+                        ratio_w = target_w / img_w
+                        ratio_h = target_h / img_h
+                        ratio = max(ratio_w, ratio_h)  # Prendre le plus grand pour couvrir tout
+                        
+                        # Nouvelle taille après mise à l'échelle
+                        new_w = int(img_w * ratio)
+                        new_h = int(img_h * ratio)
+                        
+                        # Redimensionner
+                        pil_image = pil_image.resize((new_w, new_h), Image.Resampling.LANCZOS)
+                        
+                        # Centrer et découper pour avoir exactement la taille voulue
+                        left = (new_w - target_w) // 2
+                        top = (new_h - target_h) // 2
+                        right = left + target_w
+                        bottom = top + target_h
+                        pil_image = pil_image.crop((left, top, right, bottom))
+                        
+                        self.image_cache[cache_key] = ImageTk.PhotoImage(pil_image)
+                    else:
+                        # Mode FIT: conserver les proportions avec bordures
+                        pil_image.thumbnail(resize_to, Image.Resampling.LANCZOS)
+                        final_image = Image.new('RGBA', resize_to, (0, 0, 0, 0))
+                        x_offset = (resize_to[0] - pil_image.width) // 2
+                        y_offset = (resize_to[1] - pil_image.height) // 2
+                        if pil_image.mode != 'RGBA':
+                            pil_image = pil_image.convert('RGBA')
+                        final_image.paste(pil_image, (x_offset, y_offset))
+                        self.image_cache[cache_key] = ImageTk.PhotoImage(final_image)
+                else:
+                    # Fallback sans PIL
+                    self.image_cache[cache_key] = tk.PhotoImage(file=image_path)
+            except Exception as e:
+                print(f"Erreur chargement image {image_path}: {e}")
+                return None
+        return self.image_cache[cache_key]
+
     def _update_room_image(self):
-        """Update the canvas image based on the current room."""
+        """Update the canvas with layered rendering: background, items, characters."""
         if not self.game.player or not self.game.player.current_room:
             return
 
         room = self.game.player.current_room
         assets_dir = Path(__file__).parent / 'assets'
 
-        # Use room-specific image if available, otherwise fallback
-        if room.image:
-            image_path = assets_dir / room.image
-        else:
-            image_path = assets_dir / 'scene.png'
+        # Calque 0 : Nettoyage complet du canvas
+        self.canvas.delete("all")
 
-        try:
-            # Load new image
-            self._image_ref = tk.PhotoImage(file=image_path)
-            # Clear canvas and redraw image
-            self.canvas.delete("all")
+        # Calque 1 : Image de fond de la pièce (redimensionnée pour s'adapter)
+        if room.image:
+            bg_path = assets_dir / room.image
+        else:
+            bg_path = assets_dir / 'scene.png'
+
+        # Charger l'image avec redimensionnement à la taille du canvas
+        bg_image = self._load_image(bg_path, resize_to=(self.IMAGE_WIDTH, self.IMAGE_HEIGHT))
+        if bg_image:
             self.canvas.create_image(
-                self.IMAGE_WIDTH/2,
-                self.IMAGE_HEIGHT/2,
-                image=self._image_ref
+                self.IMAGE_WIDTH / 2,
+                self.IMAGE_HEIGHT / 2,
+                image=bg_image,
+                anchor="center",
+                tags="background"
             )
-        except Exception:
-            # Fallback to text if image not found or cannot be loaded
-            self.canvas.delete("all")
+        else:
+            # Fallback victorien: afficher le nom de la pièce avec style
+            self.canvas.create_rectangle(0, 0, self.IMAGE_WIDTH, self.IMAGE_HEIGHT, 
+                                        fill=self.COLORS['bg_dark'],
+                                        outline=self.COLORS['accent_gold'],
+                                        width=2)
+            # Cadre décoratif
+            self.canvas.create_rectangle(10, 10, self.IMAGE_WIDTH-10, self.IMAGE_HEIGHT-10, 
+                                        outline=self.COLORS['accent_gold'],
+                                        width=1)
             self.canvas.create_text(
-                self.IMAGE_WIDTH/2,
-                self.IMAGE_HEIGHT/2,
-                text=f"Image: {room.name}",
-                fill="white",
-                font=("Helvetica", 18)
+                self.IMAGE_WIDTH / 2,
+                self.IMAGE_HEIGHT / 2,
+                text=f"⚜ {room.name.replace('_', ' ')} ⚜",
+                fill=self.COLORS['text_gold'],
+                font=("Georgia", 20, "italic")
             )
+
+        # Calque 2 : Objets présents dans la pièce
+        for item_name, item in room.inventory.items():
+            if item.image:
+                item_path = assets_dir / item.image
+                if item_path.exists():
+                    item_image = self._load_image(item_path)
+                    if item_image:
+                        # Utiliser la position définie dans sprite_positions ou une position par défaut
+                        pos = room.sprite_positions.get(item_name, (self.IMAGE_WIDTH // 2, self.IMAGE_HEIGHT - 50))
+                        self.canvas.create_image(
+                            pos[0], pos[1],
+                            image=item_image,
+                            anchor="center",
+                            tags="item"
+                        )
+
+        # Calque 3 : Personnages présents dans la pièce
+        for char_name, char in room.characters.items():
+            if char.image:
+                char_path = assets_dir / char.image
+                if char_path.exists():
+                    char_image = self._load_image(char_path)
+                    if char_image:
+                        # Utiliser la position définie dans sprite_positions ou une position par défaut
+                        pos = room.sprite_positions.get(char_name, (self.IMAGE_WIDTH // 4, self.IMAGE_HEIGHT // 2))
+                        self.canvas.create_image(
+                            pos[0], pos[1],
+                            image=char_image,
+                            anchor="center",
+                            tags="character"
+                        )
 
 
     # -------- Event handlers --------
