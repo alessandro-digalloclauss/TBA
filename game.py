@@ -229,12 +229,12 @@ class Game:
         )
         rooms['hall'] = Room(
             'Hall',
-            '✨ Hall',
+            'Hall',
             "Le vaste hall est dominé par un grand lustre immobile. L'horloge s'est arrêtée à 22:30.",
         )
         rooms['salon_victorien'] = Room(
             'Salon_Victorien',
-            '🛋️ Salon victorien',
+            'Salon victorien',
             'On voit des fauteuils usés, une cheminée froide et une horloge ancienne.'
         )
         rooms['cuisine'] = Room(
@@ -245,7 +245,7 @@ class Game:
         rooms['bureau'] = Room(
             'Bureau',
             'Bureau',
-            'c’est l’horreur ! Un corps gît au sol dans le bureau, entouré de sang et de papiers éparpillés.'
+            'C’EST L’HORREUR ! Un corps gît au sol dans le bureau, entouré de sang et de papiers éparpillés.'
             'Les vieux fauteuils ne sont pas à leur place, ils ont visiblement été bousculés'
         )
         rooms['couloir'] = Room(
@@ -301,27 +301,27 @@ class Game:
 
         # Cuisine
         rooms['cuisine'].inventory['couteau'] = Item('couteau', 'un couteau émoussé', 0.5)
-        rooms['cuisine'].inventory['livre posé sur la table'] = Item(
-            'livre posé sur la table', 'un livre laissé sur la table, pages ouvertes', 0.8
+        rooms['cuisine'].inventory['livre'] = Item(
+            'livre', 'un livre laissé sur la table, pages ouvertes', 0.8
         )
 
         # Salon victorien
-        rooms['salon_victorien'].inventory['lettre brûlée à moitié'] = Item(
-            'lettre brûlée à moitié', "une lettre à moitié brûlée; l'encre est encore à demi lisible", 0.05
+        rooms['salon_victorien'].inventory['lettre'] = Item(
+            'lettre', "une lettre à moitié brûlée; l'encre est encore à demi lisible", 0.05
         )
 
         # Bureau
         rooms['bureau'].inventory['note froissée'] = Item('note froissée', "une note couverte de taches de sang", 0.03)
-        rooms['bureau'].inventory['corps du maître de maison'] = Item(
-            'corps du maître de maison',
+        rooms['bureau'].inventory['corps'] = Item(
+            'corps',
             "le corps sans vie du maître de maison, Armand de Valenbourg, étendu au sol, entouré de sang",
             80.0,
-            detail="La pâleur du visage et une blessure profonde au torse indiquent une mort violente; quelques objets personnels sont encore serrés dans sa main."
+            detail="À en juger par les marques sur le corps, il semble que le maître ait été poignardé."
         )
 
         # Chambre
-        rooms['chambre'].inventory['pistolet dans le tiroir'] = Item(
-            'pistolet dans le tiroir', 'un petit pistolet trouvé caché dans un tiroir', 1.2
+        rooms['chambre'].inventory['pistolet'] = Item(
+            'pistolet', 'un petit pistolet trouvé caché dans un tiroir', 1.2
         )
         rooms['chambre'].inventory['bijoux'] = Item('bijoux', 'un écrin contenant des bijoux précieux', 0.3)
 
@@ -329,8 +329,8 @@ class Game:
         rooms['bibliotheque'].inventory['grimoire'] = Item(
             'grimoire', 'un vieux grimoire relié de cuir', 1.2
         )
-        rooms['bibliotheque'].inventory['livre à la reliure étrange'] = Item(
-            'livre à la reliure étrange', 'un livre à la reliure étrange, dépasse de l\'une des étagères', 1.1,
+        rooms['bibliotheque'].inventory['livre étrange'] = Item(
+            'livre étrange', 'un livre à la reliure étrange, dépasse de l\'une des étagères', 1.1,
             detail="La reliure cache un petit mécanisme; des marques d'usure montrent qu'il a déjà été manipulé récemment."
         )
         rooms['bibliotheque'].inventory['échelle déplacée'] = Item('échelle déplacée', 'une échelle roulante déplacée', 5.0)
@@ -419,7 +419,7 @@ class Game:
         }
         rooms['cuisine'].exits = {
             'N': rooms['hall'],
-            'E': None,
+            'E': rooms['bureau'],
             'S': None,
             'O': rooms['salon_victorien'],
             'U': None,
@@ -445,7 +445,7 @@ class Game:
             'N': None,
             'E': None,
             'S': None,
-            'O': rooms['atelier'],
+            'O': rooms['cave_a_vin'],
             'U': None,
             'D': None,
         }
