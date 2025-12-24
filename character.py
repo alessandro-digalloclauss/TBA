@@ -48,7 +48,8 @@ class Character:
         Comportement:
         - 50% de chances de rester sur place.
         - Sinon, choisit au hasard une pièce adjacente non nulle et s'y déplace.
-        - Met à jour les dictionnaires  des pièces.
+        - Ne peut pas entrer dans une salle où il y a déjà un autre PNJ avec le joueur.
+        - Met à jour les dictionnaires des pièces.
 
         Retourne True si le personnage s'est déplacé, False sinon.
         """
@@ -82,8 +83,21 @@ class Character:
                 print(f"DEBUG: {self.name} décide de rester dans {room_name}")
             return False
 
-        # Choisir une destination au hasard
-        dest = random.choice(adjacent)
+        # Filtrer les destinations : exclure les salles où il y a déjà un PNJ
+        # (pour éviter que plusieurs PNJ soient dans la même salle)
+        valid_destinations = []
+        for dest in adjacent:
+            # Vérifier s'il y a déjà un autre PNJ dans cette salle
+            other_npcs = [c for c in dest.characters.values() if c is not self]
+            if len(other_npcs) == 0:
+                valid_destinations.append(dest)
+        
+        # Si aucune destination valide, rester sur place
+        if not valid_destinations:
+            return False
+
+        # Choisir une destination au hasard parmi les valides
+        dest = random.choice(valid_destinations)
 
         # Mettre à jour l'appartenance : retirer de l'ancienne salle si présent
         try:

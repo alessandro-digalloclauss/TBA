@@ -9,9 +9,6 @@ de succès.
 MSG0 = "\nLa commande '{command_word}' ne prend pas de paramètre.\n"
 MSG1 = "\nLa commande '{command_word}' prend 1 seul paramètre.\n"
 
-MSG0 = "\nLa commande '{command_word}' ne prend pas de paramètre.\n"
-MSG1 = "\nLa commande '{command_word}' prend 1 seul paramètre.\n"
-
 
 class Actions:
     """Container for actions used by the game loop."""
@@ -85,14 +82,31 @@ class Actions:
             command_word = list_of_words[0]
             print(MSG0.format(command_word=command_word))
             return False
-        print("\nVoici les commandes disponibles:")
+        
+        print("\n" + "="*50)
+        print("🔍 AIDE - Mystère au Manoir")
+        print("="*50)
+        
+        print("\n🧭 RACCOURCIS CLAVIER (Navigation):")
+        print("\t⬆⬇⬅➡  Flèches : Se déplacer (Nord/Sud/Ouest/Est)")
+        print("\tU        : Monter (étage supérieur)")
+        print("\tD        : Descendre (cave/sous-sol)")
+        print("\tB        : Revenir en arrière")
+        print("\tEscape   : Quitter le jeu")
+        
+        print("\n📜 COMMANDES DISPONIBLES:")
         # Affiche les commandes dans un ordre trié pour que les commandes
         # ajoutées ('back', 'history', ...) apparaissent de façon
         # prévisible.
         for key in sorted(game.commands.keys()):
             command = game.commands[key]
             print("\t- " + str(command))
-        print()
+        
+        print("\n💡 ASTUCES:")
+        print("\t- Double-cliquez sur un objet pour le prendre")
+        print("\t- Double-cliquez sur un suspect pour l'interroger")
+        print("\t- Double-cliquez sur un objet de l'inventaire pour le déposer")
+        print("="*50 + "\n")
         return True
 
     @staticmethod
@@ -390,19 +404,24 @@ class Actions:
 
         print(f"\nVous avez pris '{item_name}'{w_display} et l'avez mis dans votre inventaire.\n")
 
-        # Effet spécial : prendre un livre étrange peut révéler une pièce secrète
-        try:
-            nm = item_name.lower()
-            if 'livre' in nm and 'reliure' in nm and ('étrange' in nm or 'etrange' in nm):
-                # Trouver la pièce secrète et ouvrir l'accès Est/Ouest
-                secret = next((r for r in game.rooms if 'pièce' in r.name.lower() and 'cach' in r.name.lower()), None)
-                if secret is not None:
-                    # Ouvrir la porte depuis la bibliothèque
-                    current.exits['E'] = secret
-                    secret.exits['O'] = current
-                    print("\nEn retirant le livre, un mécanisme se déclenche : une porte s'ouvre vers une pièce secrète à l'est.\n")
-        except Exception:
-            pass
+        # Effet spécial : prendre le livre étrange révèle une pièce secrète
+        nm = item_name.lower()
+        
+        if 'livre' in nm and ('étrange' in nm or 'etrange' in nm):
+            # Trouver la pièce secrète dans la liste des rooms
+            secret = None
+            for room in game.rooms:
+                if 'cach' in room.name.lower() or 'secret' in room.name.lower():
+                    secret = room
+                    break
+            
+            if secret is not None:
+                # Ouvrir la porte depuis la bibliothèque
+                current.exits['E'] = secret
+                secret.exits['O'] = current
+                # Changer l'image de la bibliothèque pour montrer le passage secret ouvert
+                current.image = 'bg_bibliotheque_secret.png'
+                print("\n🔓 En retirant le livre, un mécanisme se déclenche : une porte s'ouvre vers une pièce secrète à l'est !\n")
 
         return True
 
