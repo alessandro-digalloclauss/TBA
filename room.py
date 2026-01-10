@@ -113,14 +113,16 @@ class Room:
         # Choisir la description de base à utiliser
         base = self.first_visit_description if not self.visited else self.short_description
 
-        entry = self._clean_description_for_entry(base)
+        # Créer l'entrée simple : "Vous entrez dans [Nom]."
+        entry = f"Vous entrez dans {header}."
+        
         ambience = self._contextual_ambience(base)
         exits = self.get_exit_string()
 
         # Marquer comme visité afin d'afficher la description courte la fois suivante
         self.visited = True
 
-        return f"\n-- {header} --\n\n{entry}. {ambience}\n\n{exits}\n"
+        return f"\n-- {header} --\n\n{entry}\n\n{base}\n\n{ambience}\n\n{exits}\n"
 
     def get_inventory(self) -> str:
         """Retourne une chaîne lisible représentant les items présents dans la pièce.
