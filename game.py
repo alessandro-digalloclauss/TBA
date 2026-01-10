@@ -14,7 +14,9 @@ import sys
 # Optional: import Tkinter for GUI. If unavailable, GUI will be skipped.
 try:
     import tkinter as tk
-    from tkinter import ttk, simpledialog
+    from tkinter import ttk, simpledialog, messagebox
+except Exception:
+    tk = None
 except Exception:
     tk = None
 
@@ -309,6 +311,7 @@ class Game:
         rooms['hall'].sprite_positions = {
             'cle': (100, 250),
             'manteau': (300, 200),
+            'registre des invités': (200, 260),
         }
 
         # Configuration des positions des sprites pour le Jardin d'hiver (exemple de test)
@@ -316,6 +319,13 @@ class Game:
             'plantes renversées': (150, 220),
             'gants de jardinage propres': (280, 180),
             'Émile': (80, 150),  # Position du personnage Émile
+        }
+
+        # Configuration des positions des sprites pour le Bureau (placer le corps, la montre et le carnet)
+        rooms['bureau'].sprite_positions = {
+            'corps': (420, 320),
+            'montre cassée': (460, 320),  # au poignet droit du corps
+            "carnet de rdv d'Armand": (380, 330),  # posé près du bureau
         }
 
         # Ajout d'items dans certaines pièces (nom -> Item)
@@ -331,6 +341,21 @@ class Game:
         # Hall
         rooms['hall'].inventory['cle'] = Item('cle', 'une petite clé rouillée', 0.5, image='item_cle.png')
         rooms['hall'].inventory['manteau'] = Item('manteau', "un manteau élégant, peut-être appartenant à un invité", 1.5, image='item_manteau.png')
+        # Registre des invités 
+        rooms['hall'].inventory['registre des invités'] = Item(
+            'registre des invités',
+            "un registre à couverture épaisse où sont notés les noms des invités",
+            0.6,
+            detail=(
+                "Registre des invités, à la date d'hier soir) :\n"
+                "- Hélène de Valenbourg : épouse, présence silencieuse\n"
+                "- Victor Lenoir : ingénieur, invité de l'atelier\n"
+                "- Maurice Delcourt : archiviste, visiteur studieux\n"
+                "- Clara Beaumont : invitée, lectrice reconnue\n"
+                "- Emile : jardinier, employé du manoir\n\n"
+                "Note: Ce registre recense les présents pour la soirée — pourrait contenir des indices sur les rencontres de la veille."
+            )
+        )
 
         # Cuisine
         rooms['cuisine'].inventory['couteau'] = Item('couteau', 'un couteau émoussé', 0.5)
@@ -349,7 +374,21 @@ class Game:
             'corps',
             "le corps sans vie du maître de maison, Armand de Valenbourg, étendu au sol, entouré de sang",
             80.0,
-            detail="À en juger par les marques sur le corps, il semble que le maître ait été poignardé."
+            detail="À en juger par les marques sur le corps, il semble que le maître ait été poignardé. Une montre cassée est arrêtée à 22h30 au poignet."
+        )
+        # Montre cassée retrouvée au poignet du corps
+        rooms['bureau'].inventory['montre cassée'] = Item(
+            'montre cassée',
+            "une montre cassée, au verre fissuré; l'aiguille est figée et l'affichage indique 22:30, comme arrêtée au moment du drame",
+            0.05,
+            detail="La montre est arrêtée à 22:30; Elle est encore attachée au bracelet qui entoure le poignet du corps. L'heure du crime était alors probablement aux alentours de 22h."
+        )
+        # Carnet de rendez-vous d'Armand déplacé ici depuis le Hall
+        rooms['bureau'].inventory["carnet de rdv d'Armand"] = Item(
+            "carnet de rdv d'Armand",
+            "un petit carnet de rendez-vous en cuir usé; des heures et des notes griffonnées à la hâte y figurent",
+            0.2,
+            detail="Le carnet semble appartenir à Armand de Valenbourg, à la date d'hier : 22h - discussion privée à propos du manuscrit"
         )
 
         # Chambre
@@ -367,7 +406,6 @@ class Game:
             detail="La reliure cache un petit mécanisme; des marques d'usure montrent qu'il a déjà été manipulé récemment."
         )
         rooms['bibliotheque'].inventory['échelle déplacée'] = Item('échelle déplacée', 'une échelle roulante déplacée', 5.0)
-        rooms['bibliotheque'].inventory['bougie éteinte'] = Item('bougie éteinte', 'une bougie éteinte, cire froide', 0.1)
 
         # Pièce cachée
         rooms['piece_cachee'].inventory['clé secrète'] = Item('clé secrète', 'une clé petite et finement ciselée', 0.1,
@@ -376,6 +414,17 @@ class Game:
         rooms['piece_cachee'].inventory['lettre de chantage'] = Item('lettre de chantage', 'une lettre menaçante, écrite à la main', 0.05,
             detail="La lettre mentionne une dette et le nom 'Delcourt' dans une phrase partiellement effacée."
         )
+        # Tiroir verrouillé dans la pièce cachée (intégré au bureau discret original)
+        rooms['piece_cachee'].inventory['tiroir fermé'] = Item(
+            'tiroir fermé',
+            "un tiroir dissimulé dans un petit bureau au fond de la pièce cachée; la serrure est fermée",
+            1.5,
+            detail="Le tiroir est verrouillé. Il faudra une clé appropriée pour l'ouvrir."
+        )
+        # Positions des sprites pour la pièce cachée
+        rooms['piece_cachee'].sprite_positions = {
+            'tiroir fermé': (200, 280),
+        }
 
         # Cave à vin
         rooms['cave_a_vin'].inventory['bouteille brisée'] = Item('bouteille brisée', 'des éclats de bouteille et du vin renversé', 0.2)
@@ -394,12 +443,12 @@ class Game:
         rooms['atelier'].inventory['outils lourds'] = Item('outils lourds', "une caisse d'outils lourds", 15.0)
 
         # Ajouter les personnages non joueurs dans les pièces
-        rooms['jardin_hiver'].characters['Émile'] = Character(
-            'Émile',
+        rooms['jardin_hiver'].characters['Emile'] = Character(
+            'Emile',
             "le jardinier taciturne qui connaît les passages secrets",
             rooms['jardin_hiver'],
             ["Je préfère rester discret... Ces passages cachés, peu les connaissent."],
-            image='npc_emile.png'  # Sprite du personnage Émile
+            image='npc_emile.png'  # Sprite du personnage Emile
         )
         rooms['cuisine'].characters['Clara Beaumont'] = Character(
             'Clara Beaumont',
@@ -1373,8 +1422,25 @@ class GameGUI(tk.Tk):
                         final_image.paste(pil_image, (x_offset, y_offset))
                         self.image_cache[cache_key] = ImageTk.PhotoImage(final_image)
                 else:
-                    # Fallback sans PIL
-                    self.image_cache[cache_key] = tk.PhotoImage(file=image_path)
+                    # Fallback sans PIL: charger l'image et essayer de l'adapter si resize_to est fourni
+                    img = tk.PhotoImage(file=image_path)
+                    if resize_to:
+                        try:
+                            target_w, target_h = resize_to
+                            w, h = img.width(), img.height()
+                            # Ne réduire que si l'image est plus grande que la cible
+                            if w > target_w or h > target_h:
+                                factor_w = max(1, int(round(w / target_w)))
+                                factor_h = max(1, int(round(h / target_h)))
+                                factor = max(factor_w, factor_h)
+                                # subsample ne prend que des entiers; on prend le plus grand facteur pour garantir que
+                                # l'image devienne plus petite que la cible (approximation)
+                                if factor > 1:
+                                    img = img.subsample(factor, factor)
+                        except Exception:
+                            # En cas d'erreur, revenir à l'image d'origine
+                            pass
+                    self.image_cache[cache_key] = img
             except Exception as e:
                 print(f"Erreur chargement image {image_path}: {e}")
                 return None
@@ -1446,10 +1512,13 @@ class GameGUI(tk.Tk):
             if char.image:
                 char_path = assets_dir / char.image
                 if char_path.exists():
-                    # Redimensionner les sprites PNJ à 300x300 (en conservant les proportions)
-                    char_image = self._load_image(char_path, resize_to=(300, 300), fill=False)
+                    # Redimensionner les sprites PNJ pour tenir dans la scène (proportions dynamiques)
+                    # Limites basées sur la taille du canvas : largeur max 20% et hauteur max 40% du canvas
+                    npc_max_w = max(40, int(self.IMAGE_WIDTH * 0.20))
+                    npc_max_h = max(40, int(self.IMAGE_HEIGHT * 0.40))
+                    char_image = self._load_image(char_path, resize_to=(npc_max_w, npc_max_h), fill=False)
                     if char_image:
-                        # Position aléatoire : gauche ou droite (symétrique)
+                        # Position aléatoire : gauche ou droite (symétrique), aligné au bas de l'image
                         import random
                         if random.choice([True, False]):
                             # Position bas-gauche
