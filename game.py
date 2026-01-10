@@ -129,6 +129,21 @@ class Game:
         self.commands["activate"] = cmd_activate
         cmd_rewards = Command("rewards", " : afficher vos récompenses", Actions.rewards, 0)
         self.commands["rewards"] = cmd_rewards
+        cmd_unlock = Command(
+            "déverrouiller",
+            " <objet> : déverrouiller un objet avec une clé",
+            Actions.unlock,
+            1,
+        )
+        self.commands["déverrouiller"] = cmd_unlock
+        # Alias anglais pour unlock
+        cmd_unlock_en = Command(
+            "unlock",
+            " <object> : unlock an object with a key",
+            Actions.unlock,
+            1,
+        )
+        self.commands["unlock"] = cmd_unlock_en
         # Directions utilisées dans le jeu (codes canoniques d'une lettre)
         # et table d'alias qui mappe différentes entrées utilisateur vers
         # le code canonique.

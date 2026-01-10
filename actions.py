@@ -554,3 +554,91 @@ class Actions:
 
         game.player.show_rewards()
         return True
+
+    @staticmethod
+    def unlock(game, list_of_words, number_of_parameters):
+        """Déverrouiller un objet verrouillé avec une clé appropriée.
+
+        Forme attendue: `déverrouiller <objet>`
+        """
+        if len(list_of_words) < number_of_parameters + 1:
+            command_word = list_of_words[0]
+            print(MSG1.format(command_word=command_word))
+            return False
+
+        player = game.player
+        current = getattr(player, 'current_room', None)
+        if current is None:
+            print("\nVous n'êtes dans aucune pièce.\n")
+            return False
+
+        # Récupérer le nom de l'objet à déverrouiller
+        target_name = " ".join(list_of_words[1:]).strip().lower()
+        if not target_name:
+            command_word = list_of_words[0]
+            print(MSG1.format(command_word=command_word))
+            return False
+
+        # Cas spécial: le tiroir fermé dans la pièce cachée
+        if 'tiroir' in target_name:
+            # Vérifier si le tiroir est dans la pièce
+            tiroir_key = None
+            for k in current.inventory.keys():
+                if 'tiroir' in k.lower() and 'fermé' in k.lower():
+                    tiroir_key = k
+                    break
+
+            if tiroir_key is None:
+                print("\nIl n'y a pas de tiroir fermé ici.\n")
+                return False
+
+            # Vérifier si le joueur possède la clé secrète
+            has_key = False
+            key_name = None
+            for k in player.inventory.keys():
+                if 'clé' in k.lower() and 'secrète' in k.lower():
+                    has_key = True
+                    key_name = k
+                    break
+
+            if not has_key:
+                print("\n🔒 Le tiroir est verrouillé. Vous n'avez pas la clé appropriée.\n")
+                return False
+
+            # Déverrouiller le tiroir
+            print("\n🔓 Vous utilisez la clé secrète pour ouvrir le tiroir...\n")
+
+            # Retirer le tiroir fermé et ajouter le tiroir ouvert avec son contenu
+            del current.inventory[tiroir_key]
+
+            # Ajouter les objets révélés dans le tiroir
+            from item import Item
+            current.inventory['testament'] = Item(
+                'testament',
+                "un document officiel : le testament d'Armand de Valenbourg",
+                0.1,
+                detail="Le testament révèle qu'Armand avait décidé de déshériter son épouse Hélène au profit de l'archiviste Maurice Delcourt, en échange de la préservation d'anciens manuscrits familiaux. Une annotation récente mentionne : 'À signer ce soir à 23h'."
+            )
+            current.inventory['lettre d\'aveux'] = Item(
+                "lettre d'aveux",
+                "une lettre pliée, écrite d'une main tremblante",
+                0.05,
+                detail="La lettre commence par : 'Je ne peux plus supporter ce secret... Victor sait tout sur le mécanisme que j'ai installé. Si Armand découvre la vérité...'"
+            )
+
+            # Mettre à jour les positions des sprites
+            if 'tiroir fermé' in current.sprite_positions:
+                del current.sprite_positions['tiroir fermé']
+            current.sprite_positions['testament'] = (200, 280)
+            current.sprite_positions["lettre d'aveux"] = (230, 300)
+
+            # Changer l'image de la pièce pour montrer le tiroir ouvert
+            current.image = 'bg_piece_cachee_tiroir_ouvert.png'
+
+            print("\n📜 Le tiroir s'ouvre, révélant des documents importants !\n")
+            print("Vous découvrez : un testament et une lettre d'aveux.\n")
+            return True
+
+        # Pour d'autres objets verrouillés (extensible)
+        print(f"\nVous ne pouvez pas déverrouiller '{target_name}' ici.\n")
+        return False
