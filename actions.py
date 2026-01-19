@@ -642,3 +642,113 @@ class Actions:
         # Pour d'autres objets verrouillés (extensible)
         print(f"\nVous ne pouvez pas déverrouiller '{target_name}' ici.\n")
         return False
+
+    @staticmethod
+    def accuser(game, list_of_words, number_of_parameters):
+        """Accuser un suspect d'être le meurtrier.
+
+        Forme attendue : `accuser <nom du suspect>`
+        Si le bon coupable est accusé, le joueur gagne.
+        Si le mauvais suspect est accusé, le joueur perd.
+        """
+        if len(list_of_words) < number_of_parameters + 1:
+            command_word = list_of_words[0]
+            print(MSG1.format(command_word=command_word))
+            return False
+
+        player = game.player
+
+        # Récupérer le nom du suspect accusé
+        suspect_name = " ".join(list_of_words[1:]).strip()
+        if not suspect_name:
+            command_word = list_of_words[0]
+            print(MSG1.format(command_word=command_word))
+            return False
+
+        # Le vrai coupable est Maurice Delcourt
+        # (mentionné dans la lettre de chantage, lié au manuscrit, mobile financier)
+        coupable = "maurice delcourt"
+        
+        # Liste des suspects valides pour vérifier si l'accusation est pertinente
+        suspects_valides = [
+            "maurice delcourt", "delcourt", "maurice", "archiviste",
+            "helene de valenbourg", "helene", "hélène de valenbourg", "hélène",
+            "victor lenoir", "victor", "lenoir", "ingenieur", "ingénieur",
+            "clara beaumont", "clara", "beaumont", "lectrice",
+            "emile", "émile", "jardinier"
+        ]
+        
+        suspect_lower = suspect_name.lower()
+        
+        # Vérifier si c'est un suspect valide
+        is_valid_suspect = any(s in suspect_lower or suspect_lower in s for s in suspects_valides)
+        
+        if not is_valid_suspect:
+            print(f"\n❓ '{suspect_name}' n'est pas un suspect connu dans cette affaire.\n")
+            print("Suspects possibles : Hélène de Valenbourg, Victor Lenoir, ")
+            print("Maurice Delcourt, Clara Beaumont, Émile\n")
+            return False
+
+        # Vérifier si c'est le bon coupable
+        is_coupable = any(c in suspect_lower or suspect_lower in c 
+                          for c in ["maurice delcourt", "delcourt", "maurice", "archiviste"])
+
+        print("\n" + "="*60)
+        print("⚖️  ACCUSATION OFFICIELLE")
+        print("="*60)
+        print(f"\nVous accusez {suspect_name} du meurtre d'Armand de Valenbourg...\n")
+
+        if is_coupable:
+            # VICTOIRE !
+            print("🎉 FÉLICITATIONS ! VOUS AVEZ RÉSOLU L'ÉNIGME ! 🎉\n")
+            print("="*60)
+            print("📜 LA VÉRITÉ ÉCLATE :")
+            print("="*60)
+            print("""
+Maurice Delcourt, l'archiviste obsédé par les manuscrits anciens,
+est bien le meurtrier d'Armand de Valenbourg.
+
+🔍 Les indices qui le condamnent :
+- La lettre de chantage mentionnant 'Delcourt'
+- Le testament révélant qu'Armand allait le désigner héritier
+- Les gants tachés de sang retrouvés dans l'atelier
+- Le livre étrange dans la bibliothèque, mécanisme qu'il connaissait
+- Son obsession pour les manuscrits anciens mentionnée dans le carnet
+
+💀 Mobile du crime :
+Armand avait découvert que Maurice falsifiait des documents anciens
+pour s'enrichir. Il menaçait de tout révéler. Maurice l'a poignardé
+à 22h30 dans le bureau, puis a tenté de faire disparaître les preuves
+en passant par la pièce secrète qu'il connaissait grâce à ses recherches.
+""")
+            print("="*60)
+            print(f"\n🏆 Bravo, {player.name} ! Justice est faite !\n")
+            print("="*60 + "\n")
+            game.finished = True
+            return True
+        else:
+            # DÉFAITE
+            print("❌ ERREUR FATALE ! ❌\n")
+            print("="*60)
+            print("📜 CONSÉQUENCES DE VOTRE ACCUSATION :")
+            print("="*60)
+            print(f"""
+Votre accusation contre {suspect_name} était infondée.
+
+Le vrai coupable, profitant de cette diversion, s'est échappé
+du manoir pendant que les autorités arrêtaient un innocent.
+
+💀 Le meurtrier court toujours...
+
+Les preuves étaient pourtant là :
+- La lettre de chantage mentionnant un nom...
+- Le testament caché dans le tiroir secret...
+- Les gants ensanglantés dans l'atelier...
+
+Peut-être auriez-vous dû enquêter plus attentivement.
+""")
+            print("="*60)
+            print(f"\n💔 Désolé, {player.name}. L'enquête est un échec.\n")
+            print("="*60 + "\n")
+            game.finished = True
+            return False

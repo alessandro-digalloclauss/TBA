@@ -144,6 +144,22 @@ class Game:
             1,
         )
         self.commands["unlock"] = cmd_unlock_en
+        # Commande pour accuser un suspect
+        cmd_accuser = Command(
+            "accuser",
+            " <suspect> : accuser un suspect d'être le meurtrier (attention, une seule chance !)",
+            Actions.accuser,
+            1,
+        )
+        self.commands["accuser"] = cmd_accuser
+        # Alias anglais pour accuser
+        cmd_accuse = Command(
+            "accuse",
+            " <suspect> : accuse a suspect of being the murderer (careful, only one chance!)",
+            Actions.accuser,
+            1,
+        )
+        self.commands["accuse"] = cmd_accuse
         # Directions utilisées dans le jeu (codes canoniques d'une lettre)
         # et table d'alias qui mappe différentes entrées utilisateur vers
         # le code canonique.
@@ -1574,9 +1590,11 @@ class GameGUI(tk.Tk):
         # Update all panels after command
         self._update_all_panels()
         if self.game.finished:
-            # Disable further input and schedule close (brief delay to show farewell)
+            # Disable further input but don't auto-close
+            # Let the player read the end message
             self.entry.configure(state="disabled")
-            self.after(600, self._on_close)
+            # Show end game dialog after a brief delay
+            self.after(1500, self._show_end_dialog)
 
     def _take_selected(self):
         """Prendre l'objet sélectionné dans la liste."""
@@ -1666,6 +1684,89 @@ class GameGUI(tk.Tk):
             if choice:
                 self._send_command(f"drop {choice}")
 
+    def _show_end_dialog(self):
+        """Affiche une boîte de dialogue de fin de jeu."""
+        # Créer une fenêtre de dialogue personnalisée
+        dialog = tk.Toplevel(self)
+        dialog.title("Fin de l'Enquête")
+        dialog.geometry("450x200")
+        dialog.configure(bg=self.COLORS['bg_dark'])
+        dialog.resizable(False, False)
+        dialog.transient(self)
+        
+        # Centrer la fenêtre
+        self.update_idletasks()
+        x = (self.winfo_screenwidth() // 2) - (450 // 2)
+        y = (self.winfo_screenheight() // 2) - (200 // 2)
+        dialog.geometry(f"+{x}+{y}")
+        
+        # Cadre principal
+        main_frame = tk.Frame(dialog, bg=self.COLORS['bg_dark'], padx=30, pady=20)
+        main_frame.pack(fill="both", expand=True)
+        
+        # Titre
+        title_label = tk.Label(
+            main_frame,
+            text="⚜ FIN DE L'ENQUÊTE ⚜",
+            font=("Georgia", 18, "bold"),
+            bg=self.COLORS['bg_dark'],
+            fg=self.COLORS['text_gold']
+        )
+        title_label.pack(pady=(0, 15))
+        
+        # Message
+        msg_label = tk.Label(
+            main_frame,
+            text="L'enquête est terminée.\nConsultez le carnet pour voir le résultat.",
+            font=("Georgia", 12),
+            bg=self.COLORS['bg_dark'],
+            fg=self.COLORS['text_cream'],
+            justify="center"
+        )
+        msg_label.pack(pady=(0, 20))
+        
+        # Boutons
+        btn_frame = tk.Frame(main_frame, bg=self.COLORS['bg_dark'])
+        btn_frame.pack()
+        
+        # Bouton Quitter
+        quit_btn = tk.Button(
+            btn_frame,
+            text="Quitter le Manoir",
+            font=("Georgia", 12, "bold"),
+            bg=self.COLORS['accent_burgundy'],
+            fg=self.COLORS['text_gold'],
+            activebackground=self.COLORS['accent_burgundy_light'],
+            activeforeground=self.COLORS['text_cream'],
+            relief="raised",
+            borderwidth=2,
+            padx=20,
+            pady=8,
+            cursor="hand2",
+            command=lambda: [dialog.destroy(), self._on_close()]
+        )
+        quit_btn.pack(side="left", padx=10)
+        
+        # Bouton Rester (pour relire le carnet)
+        stay_btn = tk.Button(
+            btn_frame,
+            text="Relire le Carnet",
+            font=("Georgia", 12),
+            bg=self.COLORS['bg_medium'],
+            fg=self.COLORS['text_cream'],
+            activebackground=self.COLORS['bg_light'],
+            activeforeground=self.COLORS['text_gold'],
+            relief="raised",
+            borderwidth=2,
+            padx=20,
+            pady=8,
+            cursor="hand2",
+            command=dialog.destroy
+        )
+        stay_btn.pack(side="left", padx=10)
+        
+        # Fermer la fenêtre principale si on ferme le dialogue
+        dialog.protocol("WM_DELETE_WINDOW", lambda: [dialog.destroy(), self._on_close()])
 
     def _on_close(self):
         # Restore stdout and destroy window
