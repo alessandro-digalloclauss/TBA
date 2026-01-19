@@ -144,22 +144,6 @@ class Game:
             1,
         )
         self.commands["unlock"] = cmd_unlock_en
-        # Commande pour accuser un suspect
-        cmd_accuser = Command(
-            "accuser",
-            " <suspect> : accuser un suspect d'être le meurtrier (attention, une seule chance !)",
-            Actions.accuser,
-            1,
-        )
-        self.commands["accuser"] = cmd_accuser
-        # Alias anglais pour accuser
-        cmd_accuse = Command(
-            "accuse",
-            " <suspect> : accuse a suspect of being the murderer (careful, only one chance!)",
-            Actions.accuser,
-            1,
-        )
-        self.commands["accuse"] = cmd_accuse
         # Directions utilisées dans le jeu (codes canoniques d'une lettre)
         # et table d'alias qui mappe différentes entrées utilisateur vers
         # le code canonique.
@@ -370,7 +354,6 @@ class Game:
         )
 
         # Hall
-        rooms['hall'].inventory['cle'] = Item('cle', 'une petite clé rouillée', 0.5, image='item_cle.png')
         rooms['hall'].inventory['manteau'] = Item('manteau', "un manteau élégant, peut-être appartenant à un invité", 1.5, image='item_manteau.png')
         # Registre des invités 
         rooms['hall'].inventory['registre des invités'] = Item(
@@ -478,35 +461,40 @@ class Game:
             'Emile',
             "le jardinier taciturne qui connaît les passages secrets",
             rooms['jardin_hiver'],
-            ["Je préfère rester discret... Ces passages cachés, peu les connaissent."],
+            ["Je préfère rester discret... Ces passages cachés, peu les connaissent.",
+             "Vous savez, Hélène et Armand ne s'entendaient plus trop ces derniers temps... Peut-être qu'elle en avait assez et qu'elle voulait la fortune pour elle seule."],
             image='npc_emile.png'  # Sprite du personnage Emile
         )
         rooms['cuisine'].characters['Clara Beaumont'] = Character(
             'Clara Beaumont',
-            "la lectrice mystérieuse, invitée cultivée, toujours un livre à la main (était dans la cuisine lors du drame)",
+            "la lectrice mystérieuse, invitée cultivée, toujours un livre à la main j'étais dans la cuisine lors du drame)",
             rooms['cuisine'],
-            ["Les livres disent parfois plus que les gens. J'étais dans la cuisine cette nuit-là."],
+            ["Les livres disent parfois plus que les gens. J'étais dans la cuisine cette nuit-là.",
+             "Le jardinier, Emile... Il connaissait tous les secrets d'Armand. Il travaille ici depuis des années et il voit tout, entend tout."],
             image='npc_clara.png'  # Sprite du personnage Clara
         )
         rooms['atelier'].characters['Victor Lenoir'] = Character(
             'Victor Lenoir',
             "l'ingénieur, passe son temps à l'atelier; sait manipuler des mécanismes complexes",
             rooms['atelier'],
-            ["Les mécanismes peuvent être trompeurs. Je conçois des dispositifs, pas des crimes."],
+            ["Les mécanismes peuvent être trompeurs. Je conçois des dispositifs, pas des crimes.",
+             "Entre nous... Je soupçonne Clara d'avoir été la maîtresse d'Armand. Je les ai vus ensemble plusieurs fois, en secret."],
             image='npc_victor.png'  # Sprite du personnage Victor
         )
         rooms['salon_victorien'].characters['Hélène de Valenbourg'] = Character(
             'Hélène de Valenbourg',
             "l'épouse, froide et distante (possède une arme à feu)",
             rooms['salon_victorien'],
-            ["Je suis encore sous le choc. Armand avait beaucoup d'ennemis... Je n'ai rien à cacher."],
+            ["Je suis encore sous le choc. Armand avait beaucoup d'ennemis... Je n'ai rien à cacher.",
+             "Maintenant que j'y pense... Maurice et Armand parlaient tout le temps d'un grimoire ces derniers temps. Ils se sont même disputés violemment à ce sujet, la veille du drame."],
             image='npc_helene.png'  # Sprite du personnage Hélène
         )
         rooms['bibliotheque'].characters['Maurice Delcourt'] = Character(
             'Maurice Delcourt',
             "l'archiviste, obsédé par les livres anciens; fréquente la bibliothèque",
             rooms['bibliotheque'],
-            ["Les vieux manuscrits ont des secrets que certains paieraient cher pour découvrir."],
+            ["Les vieux manuscrits ont des secrets que certains paieraient cher pour découvrir.",
+             "Si quelqu'un était assez ingénieux pour commettre un meurtre sans faire le moindre bruit, ce serait Victor. Cet homme connaît tous les mécanismes du manoir..."],
             image='npc_maurice.png'  # Sprite du personnage Maurice
         )
 
@@ -1590,11 +1578,9 @@ class GameGUI(tk.Tk):
         # Update all panels after command
         self._update_all_panels()
         if self.game.finished:
-            # Disable further input but don't auto-close
-            # Let the player read the end message
+            # Disable further input and schedule close (brief delay to show farewell)
             self.entry.configure(state="disabled")
-            # Show end game dialog after a brief delay
-            self.after(1500, self._show_end_dialog)
+            self.after(600, self._on_close)
 
     def _take_selected(self):
         """Prendre l'objet sélectionné dans la liste."""
@@ -1684,89 +1670,6 @@ class GameGUI(tk.Tk):
             if choice:
                 self._send_command(f"drop {choice}")
 
-    def _show_end_dialog(self):
-        """Affiche une boîte de dialogue de fin de jeu."""
-        # Créer une fenêtre de dialogue personnalisée
-        dialog = tk.Toplevel(self)
-        dialog.title("Fin de l'Enquête")
-        dialog.geometry("450x200")
-        dialog.configure(bg=self.COLORS['bg_dark'])
-        dialog.resizable(False, False)
-        dialog.transient(self)
-        
-        # Centrer la fenêtre
-        self.update_idletasks()
-        x = (self.winfo_screenwidth() // 2) - (450 // 2)
-        y = (self.winfo_screenheight() // 2) - (200 // 2)
-        dialog.geometry(f"+{x}+{y}")
-        
-        # Cadre principal
-        main_frame = tk.Frame(dialog, bg=self.COLORS['bg_dark'], padx=30, pady=20)
-        main_frame.pack(fill="both", expand=True)
-        
-        # Titre
-        title_label = tk.Label(
-            main_frame,
-            text="⚜ FIN DE L'ENQUÊTE ⚜",
-            font=("Georgia", 18, "bold"),
-            bg=self.COLORS['bg_dark'],
-            fg=self.COLORS['text_gold']
-        )
-        title_label.pack(pady=(0, 15))
-        
-        # Message
-        msg_label = tk.Label(
-            main_frame,
-            text="L'enquête est terminée.\nConsultez le carnet pour voir le résultat.",
-            font=("Georgia", 12),
-            bg=self.COLORS['bg_dark'],
-            fg=self.COLORS['text_cream'],
-            justify="center"
-        )
-        msg_label.pack(pady=(0, 20))
-        
-        # Boutons
-        btn_frame = tk.Frame(main_frame, bg=self.COLORS['bg_dark'])
-        btn_frame.pack()
-        
-        # Bouton Quitter
-        quit_btn = tk.Button(
-            btn_frame,
-            text="Quitter le Manoir",
-            font=("Georgia", 12, "bold"),
-            bg=self.COLORS['accent_burgundy'],
-            fg=self.COLORS['text_gold'],
-            activebackground=self.COLORS['accent_burgundy_light'],
-            activeforeground=self.COLORS['text_cream'],
-            relief="raised",
-            borderwidth=2,
-            padx=20,
-            pady=8,
-            cursor="hand2",
-            command=lambda: [dialog.destroy(), self._on_close()]
-        )
-        quit_btn.pack(side="left", padx=10)
-        
-        # Bouton Rester (pour relire le carnet)
-        stay_btn = tk.Button(
-            btn_frame,
-            text="Relire le Carnet",
-            font=("Georgia", 12),
-            bg=self.COLORS['bg_medium'],
-            fg=self.COLORS['text_cream'],
-            activebackground=self.COLORS['bg_light'],
-            activeforeground=self.COLORS['text_gold'],
-            relief="raised",
-            borderwidth=2,
-            padx=20,
-            pady=8,
-            cursor="hand2",
-            command=dialog.destroy
-        )
-        stay_btn.pack(side="left", padx=10)
-        
-        # Fermer la fenêtre principale si on ferme le dialogue
-        dialog.protocol("WM_DELETE_WINDOW", lambda: [dialog.destroy(), self._on_close()])
 
     def _on_close(self):
         # Restore stdout and destroy window
