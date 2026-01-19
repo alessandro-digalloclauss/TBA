@@ -404,6 +404,10 @@ class Actions:
 
         print(f"\nVous avez pris '{item_name}'{w_display} et l'avez mis dans votre inventaire.\n")
 
+        # Notifier le système de quêtes que l'objet a été pris
+        if hasattr(player, 'quest_manager'):
+            player.quest_manager.complete_objective(f"Prendre {item_name}")
+
         # Effet spécial : prendre le livre étrange révèle une pièce secrète
         nm = item_name.lower()
         

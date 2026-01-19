@@ -15,7 +15,7 @@ class Quest:
         reward (str): Optional reward for completing the quest.
     """
 
-    def __init__(self, title, description, objectives=None, reward=None):
+    def __init__(self, title, description, objectives=None, reward=None, completion_message=None):
         """
         Initialize a new quest.
 
@@ -24,6 +24,7 @@ class Quest:
             description (str): The description of the quest.
             objectives (list): List of objectives (default: empty list).
             reward (str): Optional reward description.
+            completion_message (str): Optional custom message when quest is completed.
         """
         self.title = title
         self.description = description
@@ -32,6 +33,7 @@ class Quest:
         self.is_completed = False
         self.is_active = False
         self.reward = reward
+        self.completion_message = completion_message
 
     def activate(self):
         """Activate the quest."""
@@ -71,8 +73,11 @@ class Quest:
         if not self.is_completed:
             self.is_completed = True
             print(f"\n🏆 Quête terminée: {self.title}")
+            # Afficher le message de complétion personnalisé s'il existe
+            if self.completion_message:
+                print(f"\n✨ {self.completion_message}\n")
             if self.reward:
-                print(f"🎁 Récompense: {self.reward}")
+                print(f"🎁 Récompense obtenue: {self.reward}")
                 if player:
                     player.add_reward(self.reward)
             print()
