@@ -17,8 +17,8 @@ IS_MAC = platform.system() == 'Darwin'
 # Optional: import Tkinter for GUI. If unavailable, GUI will be skipped.
 try:
     import tkinter as tk
-    from tkinter import ttk, simpledialog, messagebox
-except Exception:
+    from tkinter import ttk, simpledialog
+except ImportError:
     tk = None
 
 # Optional: import PIL for image resizing. If unavailable, images won't be scaled.
@@ -62,11 +62,11 @@ class GameGUI(tk.Tk):
 
     IMAGE_WIDTH = 800
     IMAGE_HEIGHT = 450
-    
+
     # Police cross-platform: Georgia sur Mac, Palatino Linotype ou Times New Roman sur Windows
     FONT_FAMILY = 'Palatino Linotype' if IS_WINDOWS else 'Georgia'
     FONT_MONO = 'Consolas' if IS_WINDOWS else 'Georgia'
-    
+
     # Palette de couleurs victoriennes Cluedo
     COLORS = {
         'bg_dark': '#1a0f0f',           # Brun très foncé (fond principal)
@@ -87,21 +87,21 @@ class GameGUI(tk.Tk):
         super().__init__()
         # Import Game ici pour éviter les imports circulaires
         from game import Game
-        
+
         # Titre sans emoji sur Windows (affichage problématique)
         if IS_WINDOWS:
             self.title("Mystere au Manoir - Enquete Victorienne")
         else:
             self.title("🔍 Mystère au Manoir - Enquête Victorienne")
         self.configure(bg=self.COLORS['bg_dark'])
-        
+
         # Plein écran au lancement - méthode différente selon l'OS
         if IS_WINDOWS:
             # Sur Windows, utiliser state('zoomed') pour un meilleur comportement
             self.state('zoomed')
         else:
             self.attributes('-fullscreen', True)
-        
+
         # Touche Escape pour quitter le jeu
         self.bind('<Escape>', lambda e: self._on_close())
 
@@ -110,7 +110,27 @@ class GameGUI(tk.Tk):
 
         # Cache d'images pour éviter le garbage collection et améliorer les performances
         self.image_cache = {}
-        
+
+        # Initialisation des attributs GUI (assignés dans _build_ui)
+        self._dialog_confirmed = None
+        self.original_stdout = None
+        self._btn_help = None
+        self.canvas = None
+        self._image_ref = None
+        self.room_label = None
+        self.exits_label = None
+        self.objects_listbox = None
+        self.chars_listbox = None
+        self.text_output = None
+        self.investigation_actions = None
+        self.inv_action_var = None
+        self.mission_actions = None
+        self.mission_action_var = None
+        self.inventory_listbox = None
+        self.entry_var = None
+        self.entry = None
+        self._detective_name = None
+
         # Configurer le style ttk pour le thème victorien
         self._setup_victorian_style()
 
@@ -125,18 +145,18 @@ class GameGUI(tk.Tk):
         # Créer le frame principal du splash screen
         self.splash_frame = tk.Frame(self, bg=self.COLORS['bg_dark'])
         self.splash_frame.place(relx=0, rely=0, relwidth=1, relheight=1)
-        
+
         # Container central pour centrer le contenu
         center_container = tk.Frame(self.splash_frame, bg=self.COLORS['bg_dark'])
         center_container.place(relx=0.5, rely=0.5, anchor="center")
-        
+
         # Cadre décoratif victorien autour de l'image
         image_border = tk.Frame(center_container, bg=self.COLORS['accent_gold'], padx=4, pady=4)
         image_border.pack(pady=(0, 30))
-        
+
         inner_border = tk.Frame(image_border, bg=self.COLORS['bg_medium'], padx=3, pady=3)
         inner_border.pack()
-        
+
         # Canvas pour l'image d'introduction
         splash_width = 900
         splash_height = 550
@@ -146,17 +166,17 @@ class GameGUI(tk.Tk):
                                        bg=self.COLORS['bg_dark'],
                                        highlightthickness=0)
         self.splash_canvas.pack()
-        
+
         # Charger l'image d'introduction
         assets_dir = Path(__file__).parent / 'assets'
         splash_image_path = assets_dir / 'splash_intro.png'
-        
+
         if splash_image_path.exists():
-            self._splash_image = self._load_image(splash_image_path, 
-                                                   resize_to=(splash_width, splash_height), 
+            self._splash_image = self._load_image(splash_image_path,
+                                                   resize_to=(splash_width, splash_height),
                                                    fill=True)
             if self._splash_image:
-                self.splash_canvas.create_image(splash_width // 2, splash_height // 2, 
+                self.splash_canvas.create_image(splash_width // 2, splash_height // 2,
                                                image=self._splash_image, anchor="center")
         else:
             # Si pas d'image, afficher un texte de remplacement stylisé
@@ -172,11 +192,11 @@ class GameGUI(tk.Tk):
                                            text="Placez votre image 'splash_intro.png' dans le dossier assets",
                                            font=(self.FONT_FAMILY, 12),
                                            fill=self.COLORS['text_muted'])
-        
+
         # Container pour les boutons
         button_container = tk.Frame(center_container, bg=self.COLORS['bg_dark'])
         button_container.pack(pady=20)
-        
+
         # Bouton "Nouvelle Partie" - Style victorien élégant
         self.new_game_btn = tk.Button(
             button_container,
@@ -194,7 +214,7 @@ class GameGUI(tk.Tk):
             command=self._start_new_game
         )
         self.new_game_btn.pack(pady=10)
-        
+
         # Effet hover sur le bouton
         self.new_game_btn.bind("<Enter>", lambda e: self.new_game_btn.config(
             bg=self.COLORS['accent_burgundy_light'],
@@ -204,7 +224,7 @@ class GameGUI(tk.Tk):
             bg=self.COLORS['accent_burgundy'],
             fg=self.COLORS['text_gold']
         ))
-        
+
         # Bouton "Quitter" - Plus discret
         self.quit_splash_btn = tk.Button(
             button_container,
@@ -222,7 +242,7 @@ class GameGUI(tk.Tk):
             command=self._on_close
         )
         self.quit_splash_btn.pack(pady=(5, 0))
-        
+
         # Texte décoratif en bas
         footer_text = tk.Label(
             center_container,
@@ -247,21 +267,21 @@ class GameGUI(tk.Tk):
         dialog.configure(bg=self.COLORS['bg_dark'])
         dialog.resizable(False, False)
         dialog.transient(self)
-        
+
         # Centrer la fenêtre
         self.update_idletasks()
         x = (self.winfo_screenwidth() // 2) - (500 // 2)
         y = (self.winfo_screenheight() // 2) - (300 // 2)
         dialog.geometry(f"+{x}+{y}")
-        
+
         # Variable pour stocker le nom
         self._detective_name = "Détective"
         self._dialog_confirmed = False
-        
+
         # Cadre décoratif
         main_frame = tk.Frame(dialog, bg=self.COLORS['bg_dark'], padx=30, pady=30)
         main_frame.pack(fill="both", expand=True)
-        
+
         # Titre
         title_label = tk.Label(
             main_frame,
@@ -271,7 +291,7 @@ class GameGUI(tk.Tk):
             fg=self.COLORS['text_gold']
         )
         title_label.pack(pady=(0, 20))
-        
+
         # Question
         question_label = tk.Label(
             main_frame,
@@ -281,11 +301,11 @@ class GameGUI(tk.Tk):
             fg=self.COLORS['text_cream']
         )
         question_label.pack(pady=(0, 15))
-        
+
         # Champ de saisie stylisé
         entry_frame = tk.Frame(main_frame, bg=self.COLORS['accent_gold'], padx=2, pady=2)
         entry_frame.pack(pady=10)
-        
+
         name_entry = tk.Entry(
             entry_frame,
             font=(self.FONT_FAMILY, 14),
@@ -298,7 +318,7 @@ class GameGUI(tk.Tk):
         )
         name_entry.pack(ipady=8)
         name_entry.focus_set()
-        
+
         def on_confirm():
             name = name_entry.get().strip()
             if not name:
@@ -306,18 +326,18 @@ class GameGUI(tk.Tk):
             self._detective_name = name
             self._dialog_confirmed = True
             dialog.destroy()
-        
+
         def on_key(event):
             if event.keysym == "Return":
                 on_confirm()
-        
+
         def on_dialog_close():
             self._dialog_confirmed = True  # Permet de continuer même si fermé
             dialog.destroy()
-        
+
         name_entry.bind("<Key>", on_key)
         dialog.protocol("WM_DELETE_WINDOW", on_dialog_close)
-        
+
         # Bouton de confirmation
         confirm_btn = tk.Button(
             main_frame,
@@ -335,7 +355,7 @@ class GameGUI(tk.Tk):
             command=on_confirm
         )
         confirm_btn.pack(pady=(20, 0))
-        
+
         # Effet hover
         confirm_btn.bind("<Enter>", lambda e: confirm_btn.config(
             bg=self.COLORS['accent_burgundy_light']
@@ -343,11 +363,11 @@ class GameGUI(tk.Tk):
         confirm_btn.bind("<Leave>", lambda e: confirm_btn.config(
             bg=self.COLORS['accent_burgundy']
         ))
-        
+
         # Attendre que le dialogue soit fermé
         dialog.grab_set()
         self.wait_window(dialog)
-        
+
         # Initialiser le jeu après fermeture du dialogue
         self._initialize_game()
 
@@ -355,13 +375,13 @@ class GameGUI(tk.Tk):
         """Initialise le jeu après la saisie du nom."""
         # Détruire l'écran d'accueil
         self.splash_frame.destroy()
-        
+
         # Configurer le jeu avec le nom du joueur
         self.game.setup(player_name=self._detective_name)
 
         # Build UI layers
         self._build_layout()
-        
+
         # Raccourcis clavier pour la navigation
         self.bind('<Up>', lambda e: self._send_command('go N'))
         self.bind('<Down>', lambda e: self._send_command('go S'))
@@ -385,16 +405,16 @@ class GameGUI(tk.Tk):
         """Configure le style ttk pour un thème victorien."""
         style = ttk.Style()
         style.theme_use('clam')
-        
+
         # Style général
         style.configure('.',
                        background=self.COLORS['bg_dark'],
                        foreground=self.COLORS['text_cream'],
                        font=(self.FONT_FAMILY, 14))
-        
+
         # Frames
         style.configure('TFrame', background=self.COLORS['bg_dark'])
-        
+
         # LabelFrames avec bordure dorée
         style.configure('TLabelframe',
                        background=self.COLORS['bg_dark'],
@@ -405,13 +425,13 @@ class GameGUI(tk.Tk):
                        background=self.COLORS['bg_dark'],
                        foreground=self.COLORS['text_gold'],
                        font=(self.FONT_FAMILY, 14, 'bold'))
-        
+
         # Scrollbar
         style.configure('TScrollbar',
                        background=self.COLORS['bg_medium'],
                        troughcolor=self.COLORS['bg_dark'],
                        arrowcolor=self.COLORS['accent_gold'])
-        
+
         # Entry
         style.configure('TEntry',
                        fieldbackground=self.COLORS['bg_medium'],
@@ -465,11 +485,11 @@ class GameGUI(tk.Tk):
         # Image area (left) - Style parchemin victorien
         image_frame = ttk.LabelFrame(top_frame, text="Scene du Crime" if IS_WINDOWS else "⚜ Scène du Crime ⚜")
         image_frame.grid(row=0, column=0, sticky="nw", padx=(0, 6))
-        
+
         canvas_container = ttk.Frame(image_frame, width=self.IMAGE_WIDTH, height=self.IMAGE_HEIGHT)
         canvas_container.pack(padx=5, pady=5)
         canvas_container.pack_propagate(False)
-        
+
         self.canvas = tk.Canvas(canvas_container,
                                 width=self.IMAGE_WIDTH,
                                 height=self.IMAGE_HEIGHT,
@@ -492,19 +512,19 @@ class GameGUI(tk.Tk):
         room_frame = ttk.LabelFrame(info_frame, text="Lieu d'Investigation" if IS_WINDOWS else "⚜ Lieu d'Investigation ⚜")
         room_frame.grid(row=0, column=0, sticky="ew", pady=(0, 4))
         self.room_label = tk.Label(room_frame, text="", font=(self.FONT_FAMILY, 16, "bold"),
-                                   bg=self.COLORS['bg_medium'], fg=self.COLORS['text_gold'], 
+                                   bg=self.COLORS['bg_medium'], fg=self.COLORS['text_gold'],
                                    anchor="w")
         self.room_label.pack(fill="x", padx=5, pady=3)
         self.exits_label = tk.Label(room_frame, text="", font=(self.FONT_FAMILY, 12),
-                                    bg=self.COLORS['bg_light'], fg=self.COLORS['text_muted'], 
+                                    bg=self.COLORS['bg_light'], fg=self.COLORS['text_muted'],
                                     anchor="w")
         self.exits_label.pack(fill="x", padx=5, pady=(0, 3))
 
         # Objects in room - style indices
         objects_frame = ttk.LabelFrame(info_frame, text="Indices & Objets" if IS_WINDOWS else "🔍 Indices & Objets")
         objects_frame.grid(row=1, column=0, sticky="nsew", pady=4)
-        self.objects_listbox = tk.Listbox(objects_frame, height=3, 
-                                          bg=self.COLORS['bg_medium'], 
+        self.objects_listbox = tk.Listbox(objects_frame, height=3,
+                                          bg=self.COLORS['bg_medium'],
                                           fg=self.COLORS['text_cream'],
                                           selectbackground=self.COLORS['highlight'],
                                           selectforeground=self.COLORS['text_gold'],
@@ -517,8 +537,8 @@ class GameGUI(tk.Tk):
         # Characters in room - style suspects
         chars_frame = ttk.LabelFrame(info_frame, text="Suspects Presents" if IS_WINDOWS else "🎭 Suspects Présents")
         chars_frame.grid(row=2, column=0, sticky="nsew", pady=4)
-        self.chars_listbox = tk.Listbox(chars_frame, height=2, 
-                                        bg=self.COLORS['bg_medium'], 
+        self.chars_listbox = tk.Listbox(chars_frame, height=2,
+                                        bg=self.COLORS['bg_medium'],
                                         fg=self.COLORS['text_cream'],
                                         selectbackground=self.COLORS['highlight'],
                                         selectforeground=self.COLORS['text_gold'],
@@ -564,8 +584,8 @@ class GameGUI(tk.Tk):
 
         # Style de boutons victoriens - texte doré sur fond sombre
         btn_style = {
-            "width": 12, 
-            "pady": 2, 
+            "width": 12,
+            "pady": 2,
             "font": (self.FONT_FAMILY, 13),
             "bg": self.COLORS['bg_dark'],
             "fg": self.COLORS['text_gold'],
@@ -592,9 +612,9 @@ class GameGUI(tk.Tk):
         # Panneau de raccourcis clavier
         move_frame = ttk.LabelFrame(actions_panel, text="Navigation (Clavier)" if IS_WINDOWS else "🧭 Navigation (Clavier)")
         move_frame.grid(row=1, column=0, sticky="ew", pady=2)
-        
+
         # Indication des contrôles clavier
-        controls_info = tk.Label(move_frame, 
+        controls_info = tk.Label(move_frame,
                                   text="Fleches: N/S/O/E\nU: Monter | D: Descendre | B: Retour" if IS_WINDOWS else "⬆⬇⬅➡ Flèches: N/S/O/E\nU: Monter | D: Descendre | B: Retour",
                                   font=(self.FONT_FAMILY, 10),
                                   bg=self.COLORS['bg_dark'],
@@ -606,7 +626,7 @@ class GameGUI(tk.Tk):
         act_frame = ttk.LabelFrame(actions_panel, text="Investigation" if IS_WINDOWS else "🔍 Investigation")
         act_frame.grid(row=2, column=0, sticky="ew", pady=2)
         act_frame.grid_columnconfigure(0, weight=1)
-        
+
         # Actions d'investigation disponibles (sans emojis sur Windows)
         if IS_WINDOWS:
             self.investigation_actions = {
@@ -616,6 +636,7 @@ class GameGUI(tk.Tk):
                 "Deposer": self._prompt_drop,
                 "Interroger": self._prompt_talk,
                 "Inspecter": self._prompt_inspect,
+                "Accuser": self._prompt_accuser,
             }
             self.inv_action_var = tk.StringVar(value="Observer")
         else:
@@ -626,11 +647,12 @@ class GameGUI(tk.Tk):
                 "📦 Déposer": self._prompt_drop,
                 "💬 Interroger": self._prompt_talk,
                 "🔍 Inspecter": self._prompt_inspect,
+                "⚖️ Accuser": self._prompt_accuser,
             }
             self.inv_action_var = tk.StringVar(value="👁 Observer")
-        
+
         # Menu déroulant Investigation
-        inv_dropdown = tk.OptionMenu(act_frame, self.inv_action_var, 
+        inv_dropdown = tk.OptionMenu(act_frame, self.inv_action_var,
                                       *list(self.investigation_actions.keys()))
         inv_dropdown.config(
             font=(self.FONT_FAMILY, 12),
@@ -650,11 +672,11 @@ class GameGUI(tk.Tk):
             activeforeground=self.COLORS['text_cream']
         )
         inv_dropdown.grid(row=0, column=0, padx=4, pady=4, sticky="ew")
-        
+
         # Style bouton GO
         go_btn_style = {
-            "width": 6, 
-            "pady": 3, 
+            "width": 6,
+            "pady": 3,
             "font": (self.FONT_FAMILY, 12, "bold"),
             "bg": self.COLORS['accent_burgundy'],
             "fg": self.COLORS['text_gold'],
@@ -663,8 +685,8 @@ class GameGUI(tk.Tk):
             "relief": "raised",
             "bd": 2
         }
-        
-        tk.Button(act_frame, text="GO" if IS_WINDOWS else "▶ GO", 
+
+        tk.Button(act_frame, text="GO" if IS_WINDOWS else "▶ GO",
                   command=self._execute_investigation,
                   **go_btn_style).grid(row=0, column=1, padx=4, pady=4)
 
@@ -672,7 +694,7 @@ class GameGUI(tk.Tk):
         quest_frame = ttk.LabelFrame(actions_panel, text="Missions" if IS_WINDOWS else "📋 Missions")
         quest_frame.grid(row=3, column=0, sticky="ew", pady=2)
         quest_frame.grid_columnconfigure(0, weight=1)
-        
+
         # Actions de missions disponibles (sans emojis sur Windows)
         if IS_WINDOWS:
             self.mission_actions = {
@@ -688,9 +710,9 @@ class GameGUI(tk.Tk):
                 "🔓 Déverrouiller": self._prompt_unlock,
             }
             self.mission_action_var = tk.StringVar(value="📋 Objectifs")
-        
+
         # Utiliser tk.OptionMenu pour un meilleur contrôle du style
-        mission_dropdown = tk.OptionMenu(quest_frame, self.mission_action_var, 
+        mission_dropdown = tk.OptionMenu(quest_frame, self.mission_action_var,
                                           *list(self.mission_actions.keys()))
         mission_dropdown.config(
             font=(self.FONT_FAMILY, 12),
@@ -710,8 +732,8 @@ class GameGUI(tk.Tk):
             activeforeground=self.COLORS['text_cream']
         )
         mission_dropdown.grid(row=0, column=0, padx=4, pady=4, sticky="ew")
-        
-        tk.Button(quest_frame, text="GO" if IS_WINDOWS else "▶ GO", 
+
+        tk.Button(quest_frame, text="GO" if IS_WINDOWS else "▶ GO",
                   command=self._execute_mission,
                   **go_btn_style).grid(row=0, column=1, padx=4, pady=4)
 
@@ -726,9 +748,9 @@ class GameGUI(tk.Tk):
         # Inventory panel (left) - Style sacoche de détective
         inv_frame = ttk.LabelFrame(bottom_frame, text="Sacoche du Detective" if IS_WINDOWS else "🎒 Sacoche du Détective")
         inv_frame.grid(row=0, column=0, sticky="ew", padx=(0, 6))
-        
-        self.inventory_listbox = tk.Listbox(inv_frame, height=3, 
-                                            bg=self.COLORS['bg_medium'], 
+
+        self.inventory_listbox = tk.Listbox(inv_frame, height=3,
+                                            bg=self.COLORS['bg_medium'],
                                             fg=self.COLORS['text_cream'],
                                             selectbackground=self.COLORS['highlight'],
                                             selectforeground=self.COLORS['text_gold'],
@@ -748,8 +770,8 @@ class GameGUI(tk.Tk):
         entry_container.grid_columnconfigure(0, weight=1)
 
         self.entry_var = tk.StringVar()
-        self.entry = tk.Entry(entry_container, 
-                              textvariable=self.entry_var, 
+        self.entry = tk.Entry(entry_container,
+                              textvariable=self.entry_var,
                               font=(self.FONT_FAMILY, 16),
                               bg=self.COLORS['bg_medium'],
                               fg=self.COLORS['text_cream'],
@@ -761,7 +783,7 @@ class GameGUI(tk.Tk):
         self.entry.focus_set()
 
         send_btn = tk.Button(entry_container, text="Executer" if IS_WINDOWS else "Exécuter", command=self._on_enter,
-                             bg=self.COLORS['accent_burgundy'], 
+                             bg=self.COLORS['accent_burgundy'],
                              fg=self.COLORS['text_cream'],
                              activebackground=self.COLORS['accent_burgundy_light'],
                              activeforeground=self.COLORS['text_gold'],
@@ -825,10 +847,10 @@ class GameGUI(tk.Tk):
     # -------- Image update --------
     def _load_image(self, image_path, resize_to=None, fill=True):
         """Charge une image depuis le cache ou depuis le fichier.
-        
+
         Utilise un cache pour éviter de recharger les images et prévenir
         le garbage collection des PhotoImage par Python.
-        
+
         Args:
             image_path: Chemin vers l'image
             resize_to: Tuple (width, height) pour redimensionner l'image
@@ -836,45 +858,45 @@ class GameGUI(tk.Tk):
         """
         # Créer une clé de cache unique incluant la taille et le mode
         cache_key = f"{image_path}_{resize_to}_{fill}" if resize_to else str(image_path)
-        
+
         # Méthode de resampling compatible avec toutes les versions de PIL
         def get_resample_method():
             try:
                 return Image.Resampling.LANCZOS
             except AttributeError:
                 return Image.LANCZOS if hasattr(Image, 'LANCZOS') else Image.ANTIALIAS
-        
+
         if cache_key not in self.image_cache:
             try:
                 if PIL_AVAILABLE and resize_to:
                     # Utiliser PIL pour redimensionner l'image
                     pil_image = Image.open(image_path)
                     resample = get_resample_method()
-                    
+
                     if fill:
                         # Mode FILL: redimensionner pour couvrir tout le cadre (crop si nécessaire)
                         target_w, target_h = resize_to
                         img_w, img_h = pil_image.size
-                        
+
                         # Calculer le ratio pour couvrir tout le cadre
                         ratio_w = target_w / img_w
                         ratio_h = target_h / img_h
                         ratio = max(ratio_w, ratio_h)  # Prendre le plus grand pour couvrir tout
-                        
+
                         # Nouvelle taille après mise à l'échelle
                         new_w = int(img_w * ratio)
                         new_h = int(img_h * ratio)
-                        
+
                         # Redimensionner
                         pil_image = pil_image.resize((new_w, new_h), resample)
-                        
+
                         # Centrer et découper pour avoir exactement la taille voulue
                         left = (new_w - target_w) // 2
                         top = (new_h - target_h) // 2
                         right = left + target_w
                         bottom = top + target_h
                         pil_image = pil_image.crop((left, top, right, bottom))
-                        
+
                         self.image_cache[cache_key] = ImageTk.PhotoImage(pil_image)
                     else:
                         # Mode FIT: conserver les proportions avec bordures
@@ -940,12 +962,12 @@ class GameGUI(tk.Tk):
             )
         else:
             # Fallback victorien: afficher le nom de la pièce avec style
-            self.canvas.create_rectangle(0, 0, self.IMAGE_WIDTH, self.IMAGE_HEIGHT, 
+            self.canvas.create_rectangle(0, 0, self.IMAGE_WIDTH, self.IMAGE_HEIGHT,
                                         fill=self.COLORS['bg_dark'],
                                         outline=self.COLORS['accent_gold'],
                                         width=2)
             # Cadre décoratif
-            self.canvas.create_rectangle(10, 10, self.IMAGE_WIDTH-10, self.IMAGE_HEIGHT-10, 
+            self.canvas.create_rectangle(10, 10, self.IMAGE_WIDTH-10, self.IMAGE_HEIGHT-10,
                                         outline=self.COLORS['accent_gold'],
                                         width=1)
             self.canvas.create_text(
@@ -973,7 +995,7 @@ class GameGUI(tk.Tk):
                         )
 
         # Calque 3 : Personnages présents dans la pièce
-        for char_name, char in room.characters.items():
+        for _char_name, char in room.characters.items():
             if char.image:
                 char_path = assets_dir / char.image
                 if char_path.exists():
@@ -993,7 +1015,7 @@ class GameGUI(tk.Tk):
                             # Position bas-droite (symétrique)
                             x_pos = self.IMAGE_WIDTH
                             anchor = "se"
-                        
+
                         self.canvas.create_image(
                             x_pos, self.IMAGE_HEIGHT,
                             image=char_image,
@@ -1024,9 +1046,9 @@ class GameGUI(tk.Tk):
         # Update all panels after command
         self._update_all_panels()
         if self.game.finished:
-            # Disable further input and schedule close (brief delay to show farewell)
+            # Afficher l'écran de fin (victoire ou défaite)
             self.entry.configure(state="disabled")
-            self.after(600, self._on_close)
+            self.after(300, self._show_end_screen)
 
     def _take_selected(self):
         """Prendre l'objet sélectionné dans la liste."""
@@ -1062,7 +1084,7 @@ class GameGUI(tk.Tk):
         if not room.characters:
             print("Il n'y a personne à qui parler ici.\n")
             return
-        
+
         # Créer une fenêtre de sélection
         chars = list(room.characters.keys())
         if len(chars) == 1:
@@ -1083,7 +1105,7 @@ class GameGUI(tk.Tk):
         if not room.inventory:
             print("Il n'y a rien à prendre ici.\n")
             return
-        
+
         items = list(room.inventory.keys())
         if len(items) == 1:
             self._send_command(f"take {items[0]}")
@@ -1102,11 +1124,11 @@ class GameGUI(tk.Tk):
         room_items = list(current.inventory.keys()) if current else []
         player_items = list(self.game.player.inventory.keys())
         all_items = room_items + player_items
-        
+
         if not all_items:
             print("Il n'y a rien à inspecter ici.\n")
             return
-        
+
         if len(all_items) == 1:
             self._send_command(f"inspect {all_items[0]}")
         else:
@@ -1124,15 +1146,15 @@ class GameGUI(tk.Tk):
         if not current:
             print("Vous n'êtes dans aucune pièce.\n")
             return
-        
+
         # Chercher les objets qui peuvent être déverrouillés
-        locked_items = [name for name, item in current.inventory.items() 
+        locked_items = [name for name, item in current.inventory.items()
                        if 'fermé' in name.lower() or 'verrouillé' in name.lower() or 'locked' in name.lower()]
-        
+
         if not locked_items:
             print("Il n'y a rien à déverrouiller ici.\n")
             return
-        
+
         if len(locked_items) == 1:
             self._send_command(f"unlock {locked_items[0]}")
         else:
@@ -1162,7 +1184,7 @@ class GameGUI(tk.Tk):
         if not player_inv:
             print("Votre inventaire est vide.\n")
             return
-        
+
         items = list(player_inv.keys())
         if len(items) == 1:
             self._send_command(f"drop {items[0]}")
@@ -1175,6 +1197,119 @@ class GameGUI(tk.Tk):
             if choice:
                 self._send_command(f"drop {choice}")
 
+    def _prompt_accuser(self):
+        """Affiche une boîte de dialogue pour accuser un suspect du meurtre."""
+        suspects = ["Hélène de Valenbourg", "Victor Lenoir", "Maurice Delcourt", "Clara Beaumont", "Émile"]
+        choice = simpledialog.askstring(
+            "⚖️ Accusation",
+            "Qui accusez-vous du meurtre d'Armand de Valenbourg ?\n\nSuspects :\n- " + "\n- ".join(suspects),
+            parent=self
+        )
+        if choice:
+            self._send_command(f"accuser {choice}")
+
+    def _show_end_screen(self):
+        """Affiche l'écran de fin (victoire ou défaite) en plein écran."""
+        # Déterminer si c'est une victoire ou une défaite
+        is_victory = getattr(self.game, 'victory', False)
+        end_text = getattr(self.game, 'victory_text', "Fin du jeu.")
+
+        # Créer une nouvelle fenêtre en plein écran
+        end_window = tk.Toplevel(self)
+        end_window.title("🏆 Victoire !" if is_victory else "💔 Défaite")
+
+        # Couleurs selon victoire/défaite
+        if is_victory:
+            bg_color = '#1a2a1a'  # Vert très foncé
+            accent_color = '#c9a227'  # Or
+            title_color = '#ffd700'  # Or brillant
+        else:
+            bg_color = '#2a1a1a'  # Rouge très foncé
+            accent_color = '#8b0000'  # Rouge foncé
+            title_color = '#ff4444'  # Rouge
+
+        end_window.configure(bg=bg_color)
+
+        # Plein écran
+        if IS_WINDOWS:
+            end_window.state('zoomed')
+        else:
+            end_window.attributes('-fullscreen', True)
+
+        # Frame principal avec padding
+        main_frame = tk.Frame(end_window, bg=bg_color)
+        main_frame.pack(expand=True, fill='both', padx=50, pady=30)
+
+        # Titre
+        title_text = "🏆 VICTOIRE 🏆" if is_victory else "💔 DÉFAITE 💔"
+        title_label = tk.Label(
+            main_frame,
+            text=title_text,
+            font=(self.FONT_FAMILY, 42, 'bold'),
+            fg=title_color,
+            bg=bg_color
+        )
+        title_label.pack(pady=(20, 30))
+
+        # Cadre pour le texte avec bordure dorée
+        text_frame = tk.Frame(main_frame, bg=accent_color, padx=3, pady=3)
+        text_frame.pack(expand=True, fill='both', padx=20)
+
+        inner_frame = tk.Frame(text_frame, bg=bg_color)
+        inner_frame.pack(expand=True, fill='both')
+
+        # Zone de texte scrollable
+        text_widget = tk.Text(
+            inner_frame,
+            font=(self.FONT_FAMILY, 16),
+            fg=self.COLORS['text_cream'],
+            bg=bg_color,
+            wrap='word',
+            padx=30,
+            pady=20,
+            borderwidth=0,
+            highlightthickness=0
+        )
+        text_widget.pack(expand=True, fill='both')
+
+        # Scrollbar
+        scrollbar = tk.Scrollbar(text_widget, command=text_widget.yview)
+        scrollbar.pack(side='right', fill='y')
+        text_widget.configure(yscrollcommand=scrollbar.set)
+
+        # Insérer le texte
+        text_widget.insert('1.0', end_text)
+        text_widget.configure(state='disabled')
+
+        # Bouton pour fermer
+        close_btn = tk.Button(
+            main_frame,
+            text="Fermer le jeu",
+            font=(self.FONT_FAMILY, 18, 'bold'),
+            fg=self.COLORS['text_cream'],
+            bg=accent_color,
+            activebackground=self.COLORS['accent_burgundy_light'],
+            activeforeground=self.COLORS['text_cream'],
+            padx=40,
+            pady=15,
+            borderwidth=0,
+            cursor='hand2',
+            command=lambda: self._close_all(end_window)
+        )
+        close_btn.pack(pady=30)
+
+        # Raccourci clavier pour fermer
+        end_window.bind('<Escape>', lambda e: self._close_all(end_window))
+        end_window.bind('<Return>', lambda e: self._close_all(end_window))
+
+        # Focus sur la nouvelle fenêtre
+        end_window.focus_force()
+        end_window.grab_set()
+
+    def _close_all(self, end_window):
+        """Ferme la fenêtre de fin et l'application principale."""
+        end_window.destroy()
+        self._on_close()
 
     def _on_close(self):
         # Restore stdout and destroy window

@@ -91,7 +91,7 @@ class Character:
             other_npcs = [c for c in dest.characters.values() if c is not self]
             if len(other_npcs) == 0:
                 valid_destinations.append(dest)
-        
+
         # Si aucune destination valide, rester sur place
         if not valid_destinations:
             return False

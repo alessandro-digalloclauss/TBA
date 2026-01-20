@@ -8,6 +8,21 @@ d'ambiance sont choisies pour renforcer l'immersion.
 
 import random
 
+# Articles définis pour chaque pièce (pour avoir "le hall", "la cuisine", etc.)
+ROOM_ARTICLES = {
+    "hall": "le",
+    "jardin_hiver": "le",
+    "salon_victorien": "le",
+    "cuisine": "la",
+    "bureau": "le",
+    "couloir": "le",
+    "chambre": "la",
+    "bibliotheque": "la",
+    "pièce_cachée": "la",
+    "cave_a_vin": "la",
+    "atelier": "l'",
+}
+
 
 class Room:
     """Représentation d'une pièce dans le monde du jeu."""
@@ -83,22 +98,31 @@ class Room:
             "cave": "La cave est fraîche et humide. Des bouteilles anciennes sont alignées, certaines brisées au sol.",
             "atelier": "Des outils et des plans froissés sont éparpillés sur l'établi. Des taches suspectes marquent le sol.",
         }
-        
+
         # Chercher une ambiance spécifique basée sur le nom de la pièce
         room_name_lower = self.name.lower()
         for key, ambience in room_ambiances.items():
             if key in room_name_lower:
                 return ambience
-        
+
+    def _get_article(self):
+        """Retourne l'article défini pour cette pièce (le, la, l')."""
+        name_lower = self.name.lower()
+        return ROOM_ARTICLES.get(name_lower, "le")
+
     def get_long_description(self):
         """Retourne une description riche. Utilise first_visit_description lors
         de la première visite, puis short_description.
         """
         header = self.name.replace("_", " ")
+        article = self._get_article()
 
-        # Créer l'entrée simple : "Vous entrez dans [Nom]."
-        entry = f"Vous entrez dans {header}."
-        
+        # Gérer l'apostrophe pour "l'"
+        if article == "l'":
+            entry = f"Vous entrez dans l'{header}."
+        else:
+            entry = f"Vous entrez dans {article} {header}."
+
         ambience = self._contextual_ambience(None)
         exits = self.get_exit_string()
 

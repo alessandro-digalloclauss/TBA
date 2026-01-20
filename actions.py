@@ -82,18 +82,18 @@ class Actions:
             command_word = list_of_words[0]
             print(MSG0.format(command_word=command_word))
             return False
-        
+
         print("\n" + "="*50)
         print("🔍 AIDE - Mystère au Manoir")
         print("="*50)
-        
+
         print("\n🧭 RACCOURCIS CLAVIER (Navigation):")
         print("\t⬆⬇⬅➡  Flèches : Se déplacer (Nord/Sud/Ouest/Est)")
         print("\tU        : Monter (étage supérieur)")
         print("\tD        : Descendre (cave/sous-sol)")
         print("\tB        : Revenir en arrière")
         print("\tEscape   : Quitter le jeu")
-        
+
         print("\n📜 COMMANDES DISPONIBLES:")
         # Affiche les commandes dans un ordre trié pour que les commandes
         # ajoutées ('back', 'history', ...) apparaissent de façon
@@ -101,7 +101,7 @@ class Actions:
         for key in sorted(game.commands.keys()):
             command = game.commands[key]
             print("\t- " + str(command))
-        
+
         print("\n💡 ASTUCES:")
         print("\t- Double-cliquez sur un objet pour le prendre")
         print("\t- Double-cliquez sur un suspect pour l'interroger")
@@ -410,7 +410,7 @@ class Actions:
 
         # Effet spécial : prendre le livre étrange révèle une pièce secrète
         nm = item_name.lower()
-        
+
         if 'livre' in nm and ('étrange' in nm or 'etrange' in nm):
             # Trouver la pièce secrète dans la liste des rooms
             secret = None
@@ -418,7 +418,7 @@ class Actions:
                 if 'cach' in room.name.lower() or 'secret' in room.name.lower():
                     secret = room
                     break
-            
+
             if secret is not None:
                 # Ouvrir la porte depuis la bibliothèque
                 current.exits['E'] = secret
@@ -670,10 +670,9 @@ class Actions:
             return False
 
         # Le vrai coupable est Maurice Delcourt
-        # (mentionné dans la lettre de chantage, lié au manuscrit, mobile financier)
         coupable = "maurice delcourt"
-        
-        # Liste des suspects valides pour vérifier si l'accusation est pertinente
+
+        # Liste des suspects valides
         suspects_valides = [
             "maurice delcourt", "delcourt", "maurice", "archiviste",
             "helene de valenbourg", "helene", "hélène de valenbourg", "hélène",
@@ -681,12 +680,12 @@ class Actions:
             "clara beaumont", "clara", "beaumont", "lectrice",
             "emile", "émile", "jardinier"
         ]
-        
+
         suspect_lower = suspect_name.lower()
-        
+
         # Vérifier si c'est un suspect valide
         is_valid_suspect = any(s in suspect_lower or suspect_lower in s for s in suspects_valides)
-        
+
         if not is_valid_suspect:
             print(f"\n❓ '{suspect_name}' n'est pas un suspect connu dans cette affaire.\n")
             print("Suspects possibles : Hélène de Valenbourg, Victor Lenoir, ")
@@ -694,92 +693,98 @@ class Actions:
             return False
 
         # Vérifier si c'est le bon coupable
-        is_coupable = any(c in suspect_lower or suspect_lower in c 
+        is_coupable = any(c in suspect_lower or suspect_lower in c
                           for c in ["maurice delcourt", "delcourt", "maurice", "archiviste"])
-
-        print("\n" + "="*60)
-        print("⚖️  ACCUSATION OFFICIELLE")
-        print("="*60)
-        print(f"\nVous accusez {suspect_name} du meurtre d'Armand de Valenbourg...\n")
 
         if is_coupable:
             # VICTOIRE !
-            print("🎉 FÉLICITATIONS ! VOUS AVEZ RÉSOLU L'ÉNIGME ! 🎉\n")
-            print("="*60)
-            print("📜 LA VÉRITÉ ÉCLATE :")
-            print("="*60)
-            print("""
+            game.victory = True
+            game.victory_text = f"""
+🎉 FÉLICITATIONS {player.name.upper()} !
+VOUS AVEZ RÉSOLU L'ÉNIGME !
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📜 LA VÉRITÉ ÉCLATE
+
 Maurice Delcourt, l'archiviste obsédé par les manuscrits anciens,
 est bien le meurtrier d'Armand de Valenbourg.
 
-🔍 LES INDICES DÉCISIFS :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔍 LES INDICES DÉCISIFS
 
 1. LA NOTE MANUSCRITE DANS L'ATELIER
-   L'écriture correspond à celle de Maurice. Que faisait cette note
-   dans l'atelier de Victor ? Maurice y est passé pour déposer
-   les fausses preuves et faire accuser l'ingénieur.
+   L'écriture correspond à celle de Maurice. Il y est passé
+   pour déposer les fausses preuves et faire accuser Victor.
 
-2. LES DOCUMENTS RÉVÉLATEURS DE LA PIÈCE CACHÉE
-   Le manuscrit familial et la lettre de chantage prouvent qu'Armand
-   détenait des preuves compromettantes sur la famille Delcourt.
-   Il menaçait de les rendre publiques.
+2. LES DOCUMENTS DE LA PIÈCE CACHÉE
+   Le manuscrit familial et la lettre de chantage prouvent
+   qu'Armand détenait des preuves compromettantes sur Maurice.
 
 3. LE TÉMOIGNAGE DE VICTOR
-   Victor n'avait aucune raison de tuer Armand. Ses blessures
-   proviennent de la lutte qu'il a eue avec Maurice dans la cave
-   quand il l'a surpris en train de cacher des preuves.
-   Victor savait que Maurice était le coupable, mais il ne pouvait
-   pas l'accuser ouvertement : Maurice l'avait menacé de mort.
-   Il a tenté de vous guider vers la vérité sans trop en dire...
+   Victor a été blessé en luttant contre Maurice dans la cave.
+   Maurice l'avait menacé de mort s'il parlait.
 
-4. VICTOR EST TROP INTELLIGENT
-   Un ingénieur aussi brillant que Victor n'aurait jamais caché
-   l'arme du crime dans son propre atelier, son endroit favori !
-   C'est une mise en scène grossière de Maurice pour le faire accuser.
+4. LA MISE EN SCÈNE GROSSIÈRE
+   Un ingénieur brillant comme Victor n'aurait jamais caché
+   l'arme du crime dans son propre atelier !
 
-💀 MOBILE DU CRIME :
-Armand de Valenbourg avait découvert un manuscrit ancien qui
-révélait des crimes commis par les ancêtres de la famille Delcourt.
-Il menaçait de rendre ces documents publics, ce qui aurait ruiné
-la réputation et la fortune de Maurice.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Désespéré, Maurice a poignardé Armand à 22h30 dans le bureau.
-Puis il a tenté de faire accuser Victor Lenoir en déposant l'arme
-du crime et les gants ensanglantés dans son atelier.
+💀 MOBILE DU CRIME
 
-Mais Maurice a commis une erreur fatale : il a laissé tomber
-une note manuscrite sous l'établi, trahissant sa présence sur
-les lieux. Et dans la pièce cachée, les documents originaux
-prouvent son véritable mobile.
-""")
-            print("="*60)
-            print(f"\n🏆 Bravo, {player.name} ! Justice est faite !\n")
-            print("="*60 + "\n")
+Armand avait découvert un manuscrit révélant des crimes
+commis par les ancêtres Delcourt. Il menaçait de tout
+rendre public, ruinant la réputation de Maurice.
+
+Désespéré, Maurice a poignardé Armand à 22h30,
+puis a tenté de faire accuser Victor Lenoir.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🏆 JUSTICE EST FAITE !
+"""
             game.finished = True
+            print("\n🎉 VICTOIRE ! L'écran de fin va s'afficher...\n")
             return True
         else:
             # DÉFAITE
-            print("❌ ERREUR FATALE ! ❌\n")
-            print("="*60)
-            print("📜 CONSÉQUENCES DE VOTRE ACCUSATION :")
-            print("="*60)
-            print(f"""
+            game.victory = False
+            game.victory_text = f"""
+❌ ERREUR FATALE ❌
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📜 CONSÉQUENCES DE VOTRE ACCUSATION
+
 Votre accusation contre {suspect_name} était infondée.
 
-Le vrai coupable, profitant de cette diversion, s'est échappé
-du manoir pendant que les autorités arrêtaient un innocent.
+Le vrai coupable, profitant de cette diversion,
+s'est échappé du manoir pendant que les autorités
+arrêtaient un innocent.
 
-💀 Le meurtrier court toujours...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💀 LE MEURTRIER COURT TOUJOURS...
 
 Les preuves étaient pourtant là :
-- La lettre de chantage mentionnant un nom...
-- Le manuscrit familial dans la pièce cachée...
-- Les gants ensanglantés dans l'atelier...
+• La note manuscrite dans l'atelier...
+• Le manuscrit familial dans la pièce cachée...
+• Les gants ensanglantés près de l'établi...
+• Le témoignage cryptique de Victor...
 
-Peut-être auriez-vous dû enquêter plus attentivement.
-""")
-            print("="*60)
-            print(f"\n💔 Désolé, {player.name}. L'enquête est un échec.\n")
-            print("="*60 + "\n")
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Le coupable était Maurice Delcourt, l'archiviste.
+
+Peut-être auriez-vous dû enquêter plus attentivement,
+{player.name}...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💔 L'ENQUÊTE EST UN ÉCHEC
+"""
             game.finished = True
+            print("\n❌ DÉFAITE ! L'écran de fin va s'afficher...\n")
             return False

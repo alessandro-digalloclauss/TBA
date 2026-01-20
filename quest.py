@@ -182,7 +182,7 @@ class Quest:
             room_name.replace('_', ' '),
             room_name.replace(' ', '_'),
         ]
-        
+
         for room_variant in room_variants:
             room_objectives = [
                 f"Visiter {room_variant}",
@@ -227,7 +227,7 @@ class Quest:
         for objective in objective_variations:
             if self.complete_objective(objective, player):
                 return True
-        
+
         # Recherche plus souple: chercher dans tous les objectifs non complétés
         if target:
             target_lower = target.lower()

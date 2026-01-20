@@ -13,7 +13,7 @@ from pathlib import Path
 # Optional: import Tkinter for GUI. If unavailable, GUI will be skipped.
 try:
     import tkinter as tk
-except Exception:
+except ImportError:
     tk = None
 
 from room import Room
@@ -133,6 +133,14 @@ class Game:
             1,
         )
         self.commands["unlock"] = cmd_unlock_en
+        # Commande pour accuser un suspect du meurtre (victoire/défaite)
+        cmd_accuser = Command(
+            "accuser",
+            " <suspect> : accuser un suspect du meurtre (commande finale)",
+            Actions.accuser,
+            1,
+        )
+        self.commands["accuser"] = cmd_accuser
         # Directions utilisées dans le jeu (codes canoniques d'une lettre)
         # et table d'alias qui mappe différentes entrées utilisateur vers
         # le code canonique.
@@ -365,7 +373,7 @@ class Game:
 
         # Hall
         rooms['hall'].inventory['manteau'] = Item('manteau', "un manteau élégant, peut-être appartenant à un invité", 1.5, image='item_manteau.png')
-        # Registre des invités 
+        # Registre des invités
         rooms['hall'].inventory['registre des invités'] = Item(
             'registre des invités',
             "un registre à couverture épaisse où sont notés les noms des invités",
