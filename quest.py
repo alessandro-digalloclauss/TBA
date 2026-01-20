@@ -176,16 +176,24 @@ class Quest:
         Returns:
             bool: True if an objective was completed, False otherwise.
         """
-        room_objectives = [
-            f"Visiter {room_name}",
-            f"Explorer {room_name}",
-            f"Aller à {room_name}",
-            f"Entrer dans {room_name}",
+        # Normaliser le nom de la pièce (remplacer espaces par underscores et vice versa)
+        room_variants = [
+            room_name,
+            room_name.replace('_', ' '),
+            room_name.replace(' ', '_'),
         ]
+        
+        for room_variant in room_variants:
+            room_objectives = [
+                f"Visiter {room_variant}",
+                f"Explorer {room_variant}",
+                f"Aller à {room_variant}",
+                f"Entrer dans {room_variant}",
+            ]
 
-        for objective in room_objectives:
-            if self.complete_objective(objective, player):
-                return True
+            for objective in room_objectives:
+                if self.complete_objective(objective, player):
+                    return True
         return False
 
     def check_action_objective(self, action, target=None, player=None):
@@ -201,18 +209,36 @@ class Quest:
             bool: True if an objective was completed, False otherwise.
         """
         if target:
+            # Créer des variations avec différentes casses et formats
+            action_cap = action.capitalize()
             objective_variations = [
                 f"{action} {target}",
                 f"{action} avec {target}",
                 f"{action} le {target}",
                 f"{action} la {target}",
+                f"{action_cap} {target}",
+                f"{action_cap} avec {target}",
+                f"{action_cap} le {target}",
+                f"{action_cap} la {target}",
             ]
         else:
-            objective_variations = [action]
+            objective_variations = [action, action.capitalize()]
 
         for objective in objective_variations:
             if self.complete_objective(objective, player):
                 return True
+        
+        # Recherche plus souple: chercher dans tous les objectifs non complétés
+        if target:
+            target_lower = target.lower()
+            action_lower = action.lower()
+            for obj in self.objectives:
+                if obj not in self.completed_objectives:
+                    obj_lower = obj.lower()
+                    # Vérifier si l'objectif contient l'action et la cible
+                    if action_lower in obj_lower and target_lower in obj_lower:
+                        self.complete_objective(obj, player)
+                        return True
         return False
 
     def check_counter_objective(self, counter_name, current_count, player=None):

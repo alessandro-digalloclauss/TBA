@@ -183,11 +183,11 @@ class Game:
             objectives=[
                 "Visiter Hall",
                 "Visiter Salon_Victorien",
-                "Visiter Bibliotheque",
+                "Visiter Cuisine",
                 "Visiter Bureau",
-                "Visiter Chambre",
+                "Visiter Jardin_hiver",
             ],
-            reward="Titre de Grand Explorateur",
+            reward="Exploration du rez-de chaussée",
             completion_message="Bravo ! Vous avez exploré les pièces principales du manoir. Votre sens de l'observation sera précieux pour résoudre cette enquête.",
         )
 
@@ -268,12 +268,12 @@ class Game:
         rooms['hall'] = Room(
             'Hall',
             'Hall',
-            "Le vaste hall est dominé par un grand lustre immobile. L'horloge s'est arrêtée à 22:30.",
+            "Le vaste hall est dominé par un grand lustre immobile. L'horloge s'est arrêtée à 22:30."
         )
         rooms['salon_victorien'] = Room(
             'Salon_Victorien',
             'Salon victorien',
-            'On voit des fauteuils usés, une cheminée froide et une horloge ancienne.'
+            'On voit des fauteuils usés et une cheminée froide.'
         )
         rooms['cuisine'] = Room(
             'Cuisine',
@@ -283,14 +283,12 @@ class Game:
         rooms['bureau'] = Room(
             'Bureau',
             'Bureau',
-            "C'EST L'HORREUR ! Un corps gît au sol dans le bureau, entouré de sang et de papiers éparpillés. "
-            "Les vieux fauteuils ne sont pas à leur place, ils ont visiblement été bousculés"
+            "C'EST L'HORREUR ! Un corps gît au sol, entouré de sang et de papiers éparpillés."
         )
         rooms['couloir'] = Room(
             'Couloir',
             '🚪 Couloir',
-            "Le long couloir est sombre et le parquet grince sous vos pas. "
-            "Des traces de pas boueuses mènent vers la bibliothèque."
+            "Le long couloir est sombre et le parquet grince sous vos pas. Des traces de pas boueuses mènent vers la bibliothèque."
         )
         rooms['chambre'] = Room(
             'Chambre',
@@ -300,14 +298,12 @@ class Game:
         rooms['bibliotheque'] = Room(
             'Bibliotheque',
             '📖 Bibliothèque',
-            "De hauts rayonnages remplis de livres anciens couvrent les murs. "
-            "Tous sont soigneusement alignés, sauf un vieux livre mal rangé qui dépasse de l'étagère."
+            "De hauts rayonnages remplis de livres anciens couvrent les murs. Un vieux livre mal rangé dépasse de l'étagère."
         )
         rooms['piece_cachee'] = Room(
             'Pièce_cachée',
             '🕯️ Pièce cachée',
-            "Une petite pièce secrète est faiblement éclairée par une lanterne. "
-            "Des parchemins en évidence sur le bureau retiennent l'attention"
+            "Une petite pièce secrète est faiblement éclairée par une lanterne. Un vieux tiroir du bureau retient l'attention."
         )
         rooms['cave_a_vin'] = Room(
             'Cave_a_vin',
@@ -388,16 +384,17 @@ class Game:
         # Cuisine
         rooms['cuisine'].inventory['couteau'] = Item('couteau', 'un couteau émoussé', 0.5)
         rooms['cuisine'].inventory['livre'] = Item(
-            'livre', 'un livre laissé sur la table, pages ouvertes', 0.8
+            'livre', "un livre appartenant à Clara, laissé sur la table, pages ouvertes", 0.8,
+            detail="Le livre porte le nom 'Clara Beaumont' inscrit à l'intérieur de la couverture."
         )
 
         # Salon victorien
         rooms['salon_victorien'].inventory['lettre'] = Item(
-            'lettre', "une lettre à moitié brûlée; l'encre est encore à demi lisible", 0.05
+            'lettre', "une lettre à moitié brûlée; l'encre est encore à demi lisible", 0.05,
+            detail="La lettre est partiellement consumée, mais on peut encore lire :\n\"Ma chère Clara,\nRetrouvez-moi dans la cuisine à 22h. Je voudrais discuter avec vous de ce dernier livre que vous m'avez passé, je viendrai avec Emile qui commence à s'intéresser à la lecture.\n- H.\"\nCette lettre semble prouver qu'Hélène, Clara et Emile étaient probablement ensemble au moment du drame..."
         )
 
         # Bureau
-        rooms['bureau'].inventory['note froissée'] = Item('note froissée', "une note couverte de taches de sang", 0.03)
         rooms['bureau'].inventory['corps'] = Item(
             'corps',
             "le corps sans vie du maître de maison, Armand de Valenbourg, étendu au sol, entouré de sang",
@@ -425,6 +422,12 @@ class Game:
         )
         rooms['chambre'].inventory['bijoux'] = Item('bijoux', 'un écrin contenant des bijoux précieux', 0.3)
 
+        # Couloir
+        rooms['couloir'].inventory['empreintes de pas'] = Item(
+            'empreintes de pas', "des traces de pas boueuses sur le parquet", 0.0,
+            detail="Les empreintes semblent provenir de bottes de jardinage. Elles mènent de l'escalier vers la bibliothèque, puis reviennent... la boue peut dater d'hier."
+        )
+
         # Bibliothèque
         rooms['bibliotheque'].inventory['grimoire'] = Item(
             'grimoire', 'un vieux grimoire relié de cuir', 1.2
@@ -435,23 +438,20 @@ class Game:
         )
         rooms['bibliotheque'].inventory['échelle déplacée'] = Item('échelle déplacée', 'une échelle roulante déplacée', 5.0)
 
-        # Pièce cachée
+        # Pièce cachée - la clé et le tiroir fermé sont visibles au début
         rooms['piece_cachee'].inventory['clé secrète'] = Item('clé secrète', 'une clé petite et finement ciselée', 0.1,
-            detail="Très fine, pourrait ouvrir un petit coffret ou un tiroir discret."
+            detail="Très fine, cette clé semble correspondre au tiroir dans le coin de la pièce..."
         )
-        rooms['piece_cachee'].inventory['lettre de chantage'] = Item('lettre de chantage', 'une lettre menaçante, écrite à la main', 0.05,
-            detail="La lettre mentionne une dette et le nom 'Delcourt' dans une phrase partiellement effacée."
-        )
-        # Tiroir verrouillé dans la pièce cachée (intégré au bureau discret original)
         rooms['piece_cachee'].inventory['tiroir fermé'] = Item(
             'tiroir fermé',
-            "un tiroir dissimulé dans un petit bureau au fond de la pièce cachée; la serrure est fermée",
+            "tiroir fermé;",
             1.5,
             detail="Le tiroir est verrouillé. Il faudra une clé appropriée pour l'ouvrir."
         )
         # Positions des sprites pour la pièce cachée
         rooms['piece_cachee'].sprite_positions = {
-            'tiroir fermé': (200, 280),
+            'clé secrète': (150, 280),
+            'tiroir fermé': (250, 280),
         }
 
         # Cave à vin
@@ -463,53 +463,52 @@ class Game:
         # Indices importants
         rooms['atelier'].inventory['gants tachés de sang'] = Item(
             'gants tachés de sang', "une paire de gants tachés de sang, indice potentiel", 0.1,
-            detail="De petites éclaboussures et des fibres noircies indiquent une lutte; des traces de saleté sont incrustées, peut-être transférées récemment."
-        )
-        rooms['atelier'].inventory['plans froissés'] = Item('plans froissés', 'des plans froissés couverts de notes et de ratures', 0.2,
-            detail="On distingue des annotations techniques et une mention barrée : 'Ne pas laisser Armand lire'."
         )
         rooms['atelier'].inventory['outils lourds'] = Item('outils lourds', "une caisse d'outils lourds", 15.0)
+        rooms['atelier'].inventory['note manuscrite'] = Item(
+            'note manuscrite', "une note griffonnée à la hâte, tombée sous l'établi", 0.02,
+            detail="La note indique : 'Club lecture - 22h - Cuisine. Hélène, Clara, Emile confirmés.'\nL'écriture est élégante et penchée... En comparant avec le registre des invités, on reconnaît l'écriture de Maurice Delcourt. Que faisait cette note dans l'atelier ? Maurice est-il passé ici ?"
+        )
+        rooms['atelier'].inventory['couteau ensanglanté'] = Item(
+            'couteau ensanglanté', "un couteau de cuisine couvert de sang séché, caché derrière un établi", 0.4,
+            detail="L'arme du crime ! La lame est couverte de sang séché. Étrangement, aucune empreinte digitale n'est visible sur le manche... impossible d'infentifier qui l'a utilisé?"
+        )
 
         # Ajouter les personnages non joueurs dans les pièces
         rooms['jardin_hiver'].characters['Emile'] = Character(
             'Emile',
-            "le jardinier taciturne qui connaît les passages secrets",
+            "le jardinier silencieux, il connaît des passages secrets...",
             rooms['jardin_hiver'],
-            ["Je préfère rester discret... Ces passages cachés, peu les connaissent.",
-             "Vous savez, Hélène et Armand ne s'entendaient plus trop ces derniers temps... Peut-être qu'elle en avait assez et qu'elle voulait la fortune pour elle seule."],
-            image='npc_emile.png'  # Sprite du personnage Emile
+            ["Je préfère rester discret... les passages cachés, peu les connaissent. Excusez mes bottes sales, c'est normal pour un jardinier... Vous savez, Hélène et Armand ne s'entendaient plus trop ces derniers temps... Peut-être qu'elle en avait assez et qu'elle voulait la fortune pour elle seule."],
+            image='npc_emile.png'
         )
         rooms['cuisine'].characters['Clara Beaumont'] = Character(
             'Clara Beaumont',
-            "la lectrice mystérieuse, invitée cultivée, toujours un livre à la main j'étais dans la cuisine lors du drame)",
+            "l'invitée cultivée, étrangement calme malgré le drame...",
             rooms['cuisine'],
-            ["Les livres disent parfois plus que les gens. J'étais dans la cuisine cette nuit-là.",
-             "Le jardinier, Emile... Il connaissait tous les secrets d'Armand. Il travaille ici depuis des années et il voit tout, entend tout."],
-            image='npc_clara.png'  # Sprite du personnage Clara
+            ["Les livres disent parfois plus que les gens. J'étais dans la cuisine cette nuit-là. Le jardinier, Emile... Il connaissait tous les secrets d'Armand. Il travaille ici depuis des années et il voit tout, entend tout."],
+            image='npc_clara.png'
         )
         rooms['atelier'].characters['Victor Lenoir'] = Character(
             'Victor Lenoir',
-            "l'ingénieur, passe son temps à l'atelier; sait manipuler des mécanismes complexes",
+            "l'ingénieur très intelligent, blessé avec des égratignures sur les mains et une coupure au front...",
             rooms['atelier'],
-            ["Les mécanismes peuvent être trompeurs. Je conçois des dispositifs, pas des crimes.",
-             "Entre nous... Je soupçonne Clara d'avoir été la maîtresse d'Armand. Je les ai vus ensemble plusieurs fois, en secret."],
-            image='npc_victor.png'  # Sprite du personnage Victor
+            ["Les mécanismes peuvent être trompeurs. Je conçois des dispositifs, pas des crimes. Entre nous... *il baisse la voix* ...méfiez-vous de Maurice. Ces blessure ? Je me suis blessé à l'atelier."],
+            image='npc_victor.png'
         )
         rooms['salon_victorien'].characters['Hélène de Valenbourg'] = Character(
             'Hélène de Valenbourg',
-            "l'épouse, froide et distante (possède une arme à feu)",
+            "l'épouse froide, héritière de la fortune du défunt...(possède une arme à feu)",
             rooms['salon_victorien'],
-            ["Je suis encore sous le choc. Armand avait beaucoup d'ennemis... Je n'ai rien à cacher.",
-             "Maintenant que j'y pense... Maurice et Armand parlaient tout le temps d'un grimoire ces derniers temps. Ils se sont même disputés violemment à ce sujet, la veille du drame."],
-            image='npc_helene.png'  # Sprite du personnage Hélène
+            ["Je suis encore sous le choc. Armand avait beaucoup d'ennemis... Je n'ai rien à cacher. Maintenant que j'y pense... Maurice et Armand parlaient tout le temps d'un grimoire ces derniers temps. Ils se sont même disputés violemment à ce sujet, la veille du drame."],
+            image='npc_helene.png'
         )
         rooms['bibliotheque'].characters['Maurice Delcourt'] = Character(
             'Maurice Delcourt',
-            "l'archiviste, obsédé par les livres anciens; fréquente la bibliothèque",
+            "l'archiviste obsédé par un manuscrit ancien...",
             rooms['bibliotheque'],
-            ["Les vieux manuscrits ont des secrets que certains paieraient cher pour découvrir.",
-             "Si quelqu'un était assez ingénieux pour commettre un meurtre sans faire le moindre bruit, ce serait Victor. Cet homme connaît tous les mécanismes du manoir..."],
-            image='npc_maurice.png'  # Sprite du personnage Maurice
+            ["Les vieux manuscrits ont des secrets que certains paieraient cher pour découvrir. Si quelqu'un était assez ingénieux pour commettre un meurtre sans faire le moindre bruit, ce serait Victor. Cet homme connaît tous les mécanismes du manoir, je m'en méfierai si j'étais vous"],
+            image='npc_maurice.png'
         )
 
         # Create exits for rooms
@@ -541,7 +540,7 @@ class Game:
             'N': rooms['hall'],
             'E': rooms['bureau'],
             'S': None,
-            'O': rooms['salon_victorien'],
+            'O': None,
             'U': None,
             'D': rooms['cave_a_vin'],
         }

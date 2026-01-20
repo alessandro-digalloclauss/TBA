@@ -793,15 +793,25 @@ class GameGUI(tk.Tk):
         """Mettre à jour la liste des objets dans la pièce."""
         self.objects_listbox.delete(0, tk.END)
         if self.game.player and self.game.player.current_room:
-            for item_name in self.game.player.current_room.inventory:
-                self.objects_listbox.insert(tk.END, f"  {item_name}")
+            for item_name, item in self.game.player.current_room.inventory.items():
+                # Afficher le nom et la description courte de l'objet
+                desc = getattr(item, 'description', '')
+                if desc:
+                    self.objects_listbox.insert(tk.END, f"  {item_name} - {desc}")
+                else:
+                    self.objects_listbox.insert(tk.END, f"  {item_name}")
 
     def _update_characters_list(self):
         """Mettre à jour la liste des personnages dans la pièce."""
         self.chars_listbox.delete(0, tk.END)
         if self.game.player and self.game.player.current_room:
-            for char_name in self.game.player.current_room.characters:
-                self.chars_listbox.insert(tk.END, f"  {char_name}")
+            for char_name, char in self.game.player.current_room.characters.items():
+                # Afficher le nom et la description courte du personnage
+                desc = getattr(char, 'description', '')
+                if desc:
+                    self.chars_listbox.insert(tk.END, f"  {char_name} - {desc}")
+                else:
+                    self.chars_listbox.insert(tk.END, f"  {char_name}")
 
     def _update_inventory_list(self):
         """Mettre à jour la liste de l'inventaire du joueur."""

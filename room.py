@@ -69,60 +69,43 @@ class Room:
         return f"Vous entrez dans {core}"
 
     def _contextual_ambience(self, raw):
-        # Choisit une phrase d'ambiance et ajoute des lignes contextuelles
-        # pour des mots-clés reconnus.
-        base_ambiances = [
-            "Un léger courant d'air frissonne contre votre nuque.",
-            "Une odeur particulière flotte dans l'air.",
-            "Le silence est seulement brisé par un bruit lointain.",
-            "La lumière révèle des détails oubliés.",
-            "Quelque chose attire votre regard, sans que vous sachiez quoi.",
-            "De faibles échos rebondissent contre les murs.",
-            "La poussière danse dans un rayon de lumière.",
-            "Un frisson vous parcourt en remarquant un détail incongru.",
-            "Des odeurs évoquent le temps et l'abandon.",
-            "L'atmosphère est lourde, comme si la maison retenait son souffle."
-        ]
-        keywords_ambiances = {
-            "cadavre": "Un goût métallique vous reste en bouche.",
-            "chaudron": "De la vapeur s'élève du chaudron, le liquide bouillonne.",
-            "horloge": "Le tic-tac de l'horloge résonne d'une cadence obsédante.",
-            "vitre": "Le vent siffle à travers la vitre cassée.",
-            "cheminée": "La suie et l'odeur de feu éteint collent aux meubles.",
-            "livres": "L'odeur du papier ancien et du cuir vous entoure.",
-            "coffre": "Le coffre fermé promet des secrets anciens."
+        # Ambiances spécifiques à chaque pièce basées sur leur contenu
+        room_ambiances = {
+            "jardin": "Des plantes exotiques sont en désordre sous une vitre brisée. Le vent s'engouffre par l'ouverture.",
+            "hall": "Le vaste hall est dominé par un grand lustre immobile. L'horloge murale s'est arrêtée à 22:30.",
+            "salon": "Des fauteuils usés entourent une cheminée froide. Un verre de vin à moitié bu avec une marque de rouge à lèvres repose sur la table.",
+            "cuisine": "Un chaudron fumant trône sur le fourneau. Les couteaux sont alignés, mais l'un d'eux manque...",
+            "bureau": "C'EST L'HORREUR ! Un corps gît au sol dans le bureau, entouré de sang et de papiers éparpillés. Les vieux fauteuils ne sont pas à leur place, ils ont visiblement été bousculés.",
+            "couloir": "Le long couloir est sombre et le parquet grince sous vos pas. Des traces de pas boueuses mènent vers la bibliothèque.",
+            "chambre": "Le lit est défait et la fenêtre entrouverte laisse entrer un courant d'air glacé.",
+            "bibliothèque": "De hauts rayonnages remplis de livres anciens couvrent les murs. Tous sont soigneusement alignés, sauf un vieux livre mal rangé qui dépasse de l'étagère.",
+            "pièce_cachée": "Une lanterne éclaire faiblement la pièce secrète. Un vieux tiroir du bureau retient l'attention.",
+            "cave": "La cave est fraîche et humide. Des bouteilles anciennes sont alignées, certaines brisées au sol.",
+            "atelier": "Des outils et des plans froissés sont éparpillés sur l'établi. Des taches suspectes marquent le sol.",
         }
-
-        ambience = random.choice(base_ambiances)
-        raw_lower = raw.lower()
-        for kw, line in keywords_ambiances.items():
-            if kw in raw_lower:
-                # Préférer une ligne contextuelle lorsqu'un mot-clé est présent
-                # et parfois l'appendre à l'ambiance choisie.
-                if random.random() < 0.7:
-                    return line
-                return f"{ambience} {line}"
-        return ambience
-
+        
+        # Chercher une ambiance spécifique basée sur le nom de la pièce
+        room_name_lower = self.name.lower()
+        for key, ambience in room_ambiances.items():
+            if key in room_name_lower:
+                return ambience
+        
     def get_long_description(self):
         """Retourne une description riche. Utilise first_visit_description lors
         de la première visite, puis short_description.
         """
         header = self.name.replace("_", " ")
 
-        # Choisir la description de base à utiliser
-        base = self.first_visit_description if not self.visited else self.short_description
-
         # Créer l'entrée simple : "Vous entrez dans [Nom]."
         entry = f"Vous entrez dans {header}."
         
-        ambience = self._contextual_ambience(base)
+        ambience = self._contextual_ambience(None)
         exits = self.get_exit_string()
 
         # Marquer comme visité afin d'afficher la description courte la fois suivante
         self.visited = True
 
-        return f"\n-- {header} --\n\n{entry}\n\n{base}\n\n{ambience}\n\n{exits}\n"
+        return f"\n-- {header} --\n\n{entry}\n\n{ambience}\n\n{exits}\n"
 
     def get_inventory(self) -> str:
         """Retourne une chaîne lisible représentant les items présents dans la pièce.

@@ -612,35 +612,35 @@ class Actions:
             # Déverrouiller le tiroir
             print("\n🔓 Vous utilisez la clé secrète pour ouvrir le tiroir...\n")
 
-            # Retirer le tiroir fermé et ajouter le tiroir ouvert avec son contenu
+            # Retirer le tiroir fermé
             del current.inventory[tiroir_key]
 
-            # Ajouter les objets révélés dans le tiroir
+            # Ajouter le manuscrit et la lettre de chantage dans la pièce
             from item import Item
-            current.inventory['testament'] = Item(
-                'testament',
-                "un document officiel : le testament d'Armand de Valenbourg",
-                0.1,
-                detail="Le testament révèle qu'Armand avait décidé de déshériter son épouse Hélène au profit de l'archiviste Maurice Delcourt, en échange de la préservation d'anciens manuscrits familiaux. Une annotation récente mentionne : 'À signer ce soir à 23h'."
+            current.inventory['manuscrit familial'] = Item(
+                'manuscrit familial',
+                "un vieux manuscrit jauni portant le sceau de la famille Delcourt",
+                0.3,
+                detail="Ce manuscrit ancien révèle que les ancêtres de Maurice Delcourt ont bâti leur fortune sur des crimes et des escroqueries au XVIIIe siècle. Si ces informations étaient rendues publiques, la réputation de la famille serait anéantie. C'est le mobile du meurtre : Maurice a tué Armand pour l'empêcher de révéler ce secret."
             )
-            current.inventory['lettre d\'aveux'] = Item(
-                "lettre d'aveux",
-                "une lettre pliée, écrite d'une main tremblante",
+            current.inventory['lettre de chantage'] = Item(
+                'lettre de chantage',
+                'une lettre menaçante, écrite à la main',
                 0.05,
-                detail="La lettre commence par : 'Je ne peux plus supporter ce secret... Victor sait tout sur le mécanisme que j'ai installé. Si Armand découvre la vérité...'"
+                detail="La lettre est signée d'Armand de Valenbourg et adressée à Maurice Delcourt :\n'Je sais ce que vos ancêtres ont fait. Le manuscrit que j'ai trouvé dans les archives révèle tout. Si vous ne quittez pas le manoir demain, je rendrai ces documents publics. La famille Delcourt sera déshonorée à jamais.'"
             )
 
             # Mettre à jour les positions des sprites
             if 'tiroir fermé' in current.sprite_positions:
                 del current.sprite_positions['tiroir fermé']
-            current.sprite_positions['testament'] = (200, 280)
-            current.sprite_positions["lettre d'aveux"] = (230, 300)
+            current.sprite_positions['manuscrit familial'] = (180, 280)
+            current.sprite_positions['lettre de chantage'] = (220, 280)
 
             # Changer l'image de la pièce pour montrer le tiroir ouvert
             current.image = 'bg_piece_cachee_tiroir_ouvert.png'
 
-            print("\n📜 Le tiroir s'ouvre, révélant des documents importants !\n")
-            print("Vous découvrez : un testament et une lettre d'aveux.\n")
+            print("📜 Le tiroir s'ouvre, révélant des documents importants !\n")
+            print("Vous découvrez : un manuscrit familial et une lettre de chantage.\n")
             return True
 
         # Pour d'autres objets verrouillés (extensible)
@@ -712,18 +712,45 @@ class Actions:
 Maurice Delcourt, l'archiviste obsédé par les manuscrits anciens,
 est bien le meurtrier d'Armand de Valenbourg.
 
-🔍 Les indices qui le condamnent :
-- La lettre de chantage mentionnant 'Delcourt'
-- Le testament révélant qu'Armand allait le désigner héritier
-- Les gants tachés de sang retrouvés dans l'atelier
-- Le livre étrange dans la bibliothèque, mécanisme qu'il connaissait
-- Son obsession pour les manuscrits anciens mentionnée dans le carnet
+🔍 LES INDICES DÉCISIFS :
 
-💀 Mobile du crime :
-Armand avait découvert que Maurice falsifiait des documents anciens
-pour s'enrichir. Il menaçait de tout révéler. Maurice l'a poignardé
-à 22h30 dans le bureau, puis a tenté de faire disparaître les preuves
-en passant par la pièce secrète qu'il connaissait grâce à ses recherches.
+1. LA NOTE MANUSCRITE DANS L'ATELIER
+   L'écriture correspond à celle de Maurice. Que faisait cette note
+   dans l'atelier de Victor ? Maurice y est passé pour déposer
+   les fausses preuves et faire accuser l'ingénieur.
+
+2. LES DOCUMENTS RÉVÉLATEURS DE LA PIÈCE CACHÉE
+   Le manuscrit familial et la lettre de chantage prouvent qu'Armand
+   détenait des preuves compromettantes sur la famille Delcourt.
+   Il menaçait de les rendre publiques.
+
+3. LE TÉMOIGNAGE DE VICTOR
+   Victor n'avait aucune raison de tuer Armand. Ses blessures
+   proviennent de la lutte qu'il a eue avec Maurice dans la cave
+   quand il l'a surpris en train de cacher des preuves.
+   Victor savait que Maurice était le coupable, mais il ne pouvait
+   pas l'accuser ouvertement : Maurice l'avait menacé de mort.
+   Il a tenté de vous guider vers la vérité sans trop en dire...
+
+4. VICTOR EST TROP INTELLIGENT
+   Un ingénieur aussi brillant que Victor n'aurait jamais caché
+   l'arme du crime dans son propre atelier, son endroit favori !
+   C'est une mise en scène grossière de Maurice pour le faire accuser.
+
+💀 MOBILE DU CRIME :
+Armand de Valenbourg avait découvert un manuscrit ancien qui
+révélait des crimes commis par les ancêtres de la famille Delcourt.
+Il menaçait de rendre ces documents publics, ce qui aurait ruiné
+la réputation et la fortune de Maurice.
+
+Désespéré, Maurice a poignardé Armand à 22h30 dans le bureau.
+Puis il a tenté de faire accuser Victor Lenoir en déposant l'arme
+du crime et les gants ensanglantés dans son atelier.
+
+Mais Maurice a commis une erreur fatale : il a laissé tomber
+une note manuscrite sous l'établi, trahissant sa présence sur
+les lieux. Et dans la pièce cachée, les documents originaux
+prouvent son véritable mobile.
 """)
             print("="*60)
             print(f"\n🏆 Bravo, {player.name} ! Justice est faite !\n")
@@ -746,7 +773,7 @@ du manoir pendant que les autorités arrêtaient un innocent.
 
 Les preuves étaient pourtant là :
 - La lettre de chantage mentionnant un nom...
-- Le testament caché dans le tiroir secret...
+- Le manuscrit familial dans la pièce cachée...
 - Les gants ensanglantés dans l'atelier...
 
 Peut-être auriez-vous dû enquêter plus attentivement.
