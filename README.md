@@ -2,6 +2,12 @@
 
 Un jeu d'aventure textuel de type enquête où vous incarnez un détective chargé de résoudre un meurtre mystérieux dans un manoir victorien.
 
+## 🎬 Vidéo de présentation
+
+[![Vidéo de présentation](https://img.youtube.com/vi/DnHG0lnyS1s/0.jpg)](https://youtu.be/DnHG0lnyS1s)
+
+👉 **[Voir la vidéo de présentation du jeu](https://youtu.be/DnHG0lnyS1s)**
+
 ---
 
 ## 📖 Table des matières
