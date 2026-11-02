@@ -2,6 +2,8 @@
 
 Un jeu d'aventure textuel de type enquête où vous incarnez un détective chargé de résoudre un meurtre mystérieux dans un manoir victorien.
 
+Projet de 1re année du cycle ingénieur à ESIEE Paris, réalisé en binôme en Python (programmation orientée objet, interface graphique Tkinter). Classé 1er de la promotion.
+
 ## 🎬 Vidéo de présentation
 
 [![Vidéo de présentation](https://img.youtube.com/vi/DnHG0lnyS1s/0.jpg)](https://youtu.be/DnHG0lnyS1s)
@@ -34,7 +36,7 @@ Un jeu d'aventure textuel de type enquête où vous incarnez un détective charg
 1. **Prérequis** : Python 3.8 ou supérieur
 2. **Cloner le dépôt** :
    ```bash
-   git clone <url-du-repo>
+   git clone https://github.com/alessandro-digalloclauss/TBA.git
    cd TBA
    ```
 3. **Dépendances optionnelles** (pour l'interface graphique) :
@@ -374,7 +376,7 @@ classDiagram
 
 ## 📝 Auteurs
 
-Projet réalisé dans le cadre d'un cours d'informatique.
+Projet réalisé en binôme dans le cadre du cours de programmation Python d'ESIEE Paris, à partir d'un squelette fourni par l'enseignant.
 
 - **Alessandro Di Gallo Clauss**
 - **Laure Dauthieu**
